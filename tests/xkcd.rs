@@ -9,7 +9,7 @@ extern crate puzzle_solver;
 
 use num_rational::Ratio;
 use num_traits::ToPrimitive;
-use puzzle_solver::{LinExpr,Puzzle,Val};
+use puzzle_solver::{LinExpr, Puzzle, Val};
 
 #[test]
 fn xkcd_knapsack() {
@@ -32,8 +32,12 @@ fn xkcd_knapsack() {
         vars.push(var)
     }
 
-    sys.equals(total, vars.iter().zip(menu.iter()).fold(LinExpr::from(0),
-            |sum, (&var, &(cost, _))| sum + var * cost));
+    sys.equals(
+        total,
+        vars.iter()
+            .zip(menu.iter())
+            .fold(LinExpr::from(0), |sum, (&var, &(cost, _))| sum + var * cost),
+    );
 
     let solutions = sys.solve_all();
     assert_eq!(solutions.len(), 2);

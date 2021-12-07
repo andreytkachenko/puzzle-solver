@@ -4,21 +4,24 @@
 
 extern crate puzzle_solver;
 
-use std::rc::Rc;
 use puzzle_solver::*;
+use std::rc::Rc;
 
 struct NoDiagonal {
     vars: Vec<VarToken>,
 }
 
 impl Constraint for NoDiagonal {
-    fn vars<'a>(&'a self) -> Box<dyn Iterator<Item=&'a VarToken> + 'a> {
+    fn vars<'a>(&'a self) -> Box<dyn Iterator<Item = &'a VarToken> + 'a> {
         Box::new(self.vars.iter())
     }
 
-    fn on_assigned(&self, search: &mut PuzzleSearch, var: VarToken, val: Val)
-            -> PsResult<()> {
-        let y1 = self.vars.iter().position(|&v| v == var).expect("unreachable");
+    fn on_assigned(&self, search: &mut PuzzleSearch, var: VarToken, val: Val) -> PsResult<()> {
+        let y1 = self
+            .vars
+            .iter()
+            .position(|&v| v == var)
+            .expect("unreachable");
         for (y2, &var2) in self.vars.iter().enumerate() {
             if !search.is_assigned(var2) {
                 let x1 = val;
@@ -31,8 +34,7 @@ impl Constraint for NoDiagonal {
         Ok(())
     }
 
-    fn substitute(&self, _from: VarToken, _to: VarToken)
-            -> PsResult<Rc<dyn Constraint>> {
+    fn substitute(&self, _from: VarToken, _to: VarToken) -> PsResult<Rc<dyn Constraint>> {
         unimplemented!();
     }
 }
@@ -43,7 +45,7 @@ fn make_queens(n: usize) -> (Puzzle, Vec<VarToken>) {
     let vars = sys.new_vars_with_candidates_1d(n, &pos);
 
     sys.all_different(&vars);
-    sys.add_constraint(NoDiagonal{ vars: vars.clone() });
+    sys.add_constraint(NoDiagonal { vars: vars.clone() });
     (sys, vars)
 }
 

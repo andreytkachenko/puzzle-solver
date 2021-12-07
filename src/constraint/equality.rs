@@ -1,10 +1,10 @@
 //! Equality implementation.
 
-use std::rc::Rc;
 use num_rational::Ratio;
 use num_traits::Zero;
+use std::rc::Rc;
 
-use crate::{Constraint,LinExpr,PsResult,PuzzleSearch,Val,VarToken};
+use crate::{Constraint, LinExpr, PsResult, PuzzleSearch, Val, VarToken};
 
 pub struct Equality {
     // The equation: 0 = constant + coef1 * var1 + coef2 * var2 + ...
@@ -25,19 +25,16 @@ impl Equality {
     ///         vars[0][0] + vars[0][1] + vars[0][2] - 15);
     /// ```
     pub fn new(eqn: LinExpr) -> Self {
-        Equality {
-            eqn: eqn,
-        }
+        Equality { eqn: eqn }
     }
 }
 
 impl Constraint for Equality {
-    fn vars<'a>(&'a self) -> Box<dyn Iterator<Item=&'a VarToken> + 'a> {
+    fn vars<'a>(&'a self) -> Box<dyn Iterator<Item = &'a VarToken> + 'a> {
         Box::new(self.eqn.coef.keys())
     }
 
-    fn on_assigned(&self, search: &mut PuzzleSearch, _: VarToken, _: Val)
-            -> PsResult<()> {
+    fn on_assigned(&self, search: &mut PuzzleSearch, _: VarToken, _: Val) -> PsResult<()> {
         let mut sum = self.eqn.constant;
         let mut unassigned_var = None;
 
@@ -108,16 +105,24 @@ impl Constraint for Equality {
             let (min_bnd, max_bnd);
 
             if coef > Ratio::zero() {
-                min_bnd = ((coef * Ratio::from_integer(max_val) - sum_max) / coef).ceil().to_integer();
-                max_bnd = ((coef * Ratio::from_integer(min_val) - sum_min) / coef).floor().to_integer();
+                min_bnd = ((coef * Ratio::from_integer(max_val) - sum_max) / coef)
+                    .ceil()
+                    .to_integer();
+                max_bnd = ((coef * Ratio::from_integer(min_val) - sum_min) / coef)
+                    .floor()
+                    .to_integer();
             } else {
-                min_bnd = ((coef * Ratio::from_integer(max_val) - sum_min) / coef).ceil().to_integer();
-                max_bnd = ((coef * Ratio::from_integer(min_val) - sum_max) / coef).floor().to_integer();
+                min_bnd = ((coef * Ratio::from_integer(max_val) - sum_min) / coef)
+                    .ceil()
+                    .to_integer();
+                max_bnd = ((coef * Ratio::from_integer(min_val) - sum_max) / coef)
+                    .floor()
+                    .to_integer();
             }
 
             if min_val < min_bnd || max_bnd < max_val {
-                let (new_min, new_max)
-                    = r#try!(search.bound_candidate_range(var, min_bnd, max_bnd));
+                let (new_min, new_max) =
+                    r#try!(search.bound_candidate_range(var, min_bnd, max_bnd));
 
                 if coef > Ratio::zero() {
                     sum_min = sum_min + coef * Ratio::from_integer(new_min - min_val);
@@ -134,26 +139,25 @@ impl Constraint for Equality {
         Ok(())
     }
 
-    fn substitute(&self, from: VarToken, to: VarToken)
-            -> PsResult<Rc<dyn Constraint>> {
+    fn substitute(&self, from: VarToken, to: VarToken) -> PsResult<Rc<dyn Constraint>> {
         let mut eqn = self.eqn.clone();
         if let Some(coef) = eqn.coef.remove(&from) {
             eqn = eqn + coef * to;
         }
 
-        Ok(Rc::new(Equality{ eqn: eqn }))
+        Ok(Rc::new(Equality { eqn: eqn }))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{Puzzle,Val};
+    use crate::{Puzzle, Val};
 
     #[test]
     fn test_contradiction() {
         let mut puzzle = Puzzle::new();
         let v0 = puzzle.new_var_with_candidates(&[3]);
-        let v1 = puzzle.new_var_with_candidates(&[0,1]);
+        let v1 = puzzle.new_var_with_candidates(&[0, 1]);
 
         puzzle.equals(v0 + 2 * v1, 4);
 
@@ -165,7 +169,7 @@ mod tests {
     fn test_assign() {
         let mut puzzle = Puzzle::new();
         let v0 = puzzle.new_var_with_candidates(&[1]);
-        let v1 = puzzle.new_var_with_candidates(&[1,2,3]);
+        let v1 = puzzle.new_var_with_candidates(&[1, 2, 3]);
 
         puzzle.equals(v0 + v1, 4);
 
@@ -177,13 +181,13 @@ mod tests {
     #[test]
     fn test_reduce_range() {
         let mut puzzle = Puzzle::new();
-        let v0 = puzzle.new_var_with_candidates(&[1,2,3]);
-        let v1 = puzzle.new_var_with_candidates(&[3,4,5]);
+        let v0 = puzzle.new_var_with_candidates(&[1, 2, 3]);
+        let v1 = puzzle.new_var_with_candidates(&[3, 4, 5]);
 
         puzzle.equals(v0 + v1, 5);
 
         let search = puzzle.step().expect("contradiction");
-        assert_eq!(search.get_unassigned(v0).collect::<Vec<Val>>(), &[1,2]);
-        assert_eq!(search.get_unassigned(v1).collect::<Vec<Val>>(), &[3,4]);
+        assert_eq!(search.get_unassigned(v0).collect::<Vec<Val>>(), &[1, 2]);
+        assert_eq!(search.get_unassigned(v1).collect::<Vec<Val>>(), &[3, 4]);
     }
 }

@@ -4,7 +4,7 @@
 
 extern crate puzzle_solver;
 
-use puzzle_solver::{LinExpr,Puzzle,Solution,Val,VarToken};
+use puzzle_solver::{LinExpr, Puzzle, Solution, Val, VarToken};
 
 fn make_magic_square(n: usize) -> (Puzzle, Vec<Vec<VarToken>>, VarToken) {
     let mut sys = Puzzle::new();
@@ -19,16 +19,28 @@ fn make_magic_square(n: usize) -> (Puzzle, Vec<Vec<VarToken>>, VarToken) {
     sys.all_different(vars.iter().flat_map(|it| it));
 
     for y in 0..n {
-        sys.equals(total, vars[y].iter().fold(LinExpr::from(0), |sum, &x| sum + x));
+        sys.equals(
+            total,
+            vars[y].iter().fold(LinExpr::from(0), |sum, &x| sum + x),
+        );
     }
 
     for x in 0..n {
-        sys.equals(total, vars.iter().fold(LinExpr::from(0), |sum, row| sum + row[x]));
+        sys.equals(
+            total,
+            vars.iter().fold(LinExpr::from(0), |sum, row| sum + row[x]),
+        );
     }
 
     {
-        sys.equals(total, (0..n).fold(LinExpr::from(0), |sum, i| sum + vars[i][i]));
-        sys.equals(total, (0..n).fold(LinExpr::from(0), |sum, i| sum + vars[i][n - i - 1]));
+        sys.equals(
+            total,
+            (0..n).fold(LinExpr::from(0), |sum, i| sum + vars[i][i]),
+        );
+        sys.equals(
+            total,
+            (0..n).fold(LinExpr::from(0), |sum, i| sum + vars[i][n - i - 1]),
+        );
     }
 
     // Sum of all digits = sum of all rows (columns) = total * n.

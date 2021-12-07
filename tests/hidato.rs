@@ -4,7 +4,7 @@
 
 extern crate puzzle_solver;
 
-use puzzle_solver::{Puzzle,Solution,Val,VarToken};
+use puzzle_solver::{Puzzle, Solution, Val, VarToken};
 
 const WIDTH: usize = 8;
 const HEIGHT: usize = 8;
@@ -40,9 +40,15 @@ fn make_hidato(board: &Board) -> (Puzzle, Vec<VarToken>) {
 
     let stride = WIDTH as Val;
     let deltas = [
-        -stride - 1, -stride, -stride + 1,
-        -1, 1,
-        stride - 1, stride, stride + 1 ];
+        -stride - 1,
+        -stride,
+        -stride + 1,
+        -1,
+        1,
+        stride - 1,
+        stride,
+        stride + 1,
+    ];
 
     for i in 1..vars.len() {
         let step = sys.new_var_with_candidates(&deltas);
@@ -84,24 +90,26 @@ fn verify_hidato(dict: &Solution, vars: &Vec<VarToken>, expected: &Board) {
 #[test]
 fn hidato_wikipedia() {
     let puzzle = [
-        [  0, 33, 35,  0,  0, NA, NA, NA ],
-        [  0,  0, 24, 22,  0, NA, NA, NA ],
-        [  0,  0,  0, 21,  0,  0, NA, NA ],
-        [  0, 26,  0, 13, 40, 11, NA, NA ],
-        [ 27,  0,  0,  0,  9,  0,  1, NA ],
-        [ NA, NA,  0,  0, 18,  0,  0, NA ],
-        [ NA, NA, NA, NA,  0,  7,  0,  0 ],
-        [ NA, NA, NA, NA, NA, NA,  5,  0 ] ];
+        [0, 33, 35, 0, 0, NA, NA, NA],
+        [0, 0, 24, 22, 0, NA, NA, NA],
+        [0, 0, 0, 21, 0, 0, NA, NA],
+        [0, 26, 0, 13, 40, 11, NA, NA],
+        [27, 0, 0, 0, 9, 0, 1, NA],
+        [NA, NA, 0, 0, 18, 0, 0, NA],
+        [NA, NA, NA, NA, 0, 7, 0, 0],
+        [NA, NA, NA, NA, NA, NA, 5, 0],
+    ];
 
     let expected = [
-        [ 32, 33, 35, 36, 37, NA, NA, NA ],
-        [ 31, 34, 24, 22, 38, NA, NA, NA ],
-        [ 30, 25, 23, 21, 12, 39, NA, NA ],
-        [ 29, 26, 20, 13, 40, 11, NA, NA ],
-        [ 27, 28, 14, 19,  9, 10,  1, NA ],
-        [ NA, NA, 15, 16, 18,  8,  2, NA ],
-        [ NA, NA, NA, NA, 17,  7,  6,  3 ],
-        [ NA, NA, NA, NA, NA, NA,  5,  4 ] ];
+        [32, 33, 35, 36, 37, NA, NA, NA],
+        [31, 34, 24, 22, 38, NA, NA, NA],
+        [30, 25, 23, 21, 12, 39, NA, NA],
+        [29, 26, 20, 13, 40, 11, NA, NA],
+        [27, 28, 14, 19, 9, 10, 1, NA],
+        [NA, NA, 15, 16, 18, 8, 2, NA],
+        [NA, NA, NA, NA, 17, 7, 6, 3],
+        [NA, NA, NA, NA, NA, NA, 5, 4],
+    ];
 
     let (mut sys, vars) = make_hidato(&puzzle);
     let dict = sys.solve_any().expect("solution");

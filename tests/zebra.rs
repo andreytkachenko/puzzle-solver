@@ -9,32 +9,66 @@ extern crate puzzle_solver;
 
 use puzzle_solver::Puzzle;
 
-#[derive(Clone,Copy,Debug)]
-enum Nat { Dane, Englishman, German, Norwegian, Swede }
+#[derive(Clone, Copy, Debug)]
+enum Nat {
+    Dane,
+    Englishman,
+    German,
+    Norwegian,
+    Swede,
+}
 
-#[derive(Clone,Copy,Debug)]
-enum Col { Blue, Green, Red, White, Yellow }
+#[derive(Clone, Copy, Debug)]
+enum Col {
+    Blue,
+    Green,
+    Red,
+    White,
+    Yellow,
+}
 
-#[derive(Clone,Copy,Debug)]
-enum Dri { Beer, Coffee, Milk, Tea, Water }
+#[derive(Clone, Copy, Debug)]
+enum Dri {
+    Beer,
+    Coffee,
+    Milk,
+    Tea,
+    Water,
+}
 
-#[derive(Clone,Copy,Debug)]
-enum Smo { Blend, BlueMaster, Dunhill, PallMall, Prince }
+#[derive(Clone, Copy, Debug)]
+enum Smo {
+    Blend,
+    BlueMaster,
+    Dunhill,
+    PallMall,
+    Prince,
+}
 
-#[derive(Clone,Copy,Debug)]
-enum Pet { Bird, Cat, Dog, Fish, Horse }
+#[derive(Clone, Copy, Debug)]
+enum Pet {
+    Bird,
+    Cat,
+    Dog,
+    Fish,
+    Horse,
+}
 
 #[test]
 fn zebra() {
-    use crate::Nat::*; use crate::Col::*; use crate::Dri::*; use crate::Smo::*; use crate::Pet::*;
+    use crate::Col::*;
+    use crate::Dri::*;
+    use crate::Nat::*;
+    use crate::Pet::*;
+    use crate::Smo::*;
 
     // #1: There are five houses.
     let mut sys = Puzzle::new();
-    let nat_var = sys.new_vars_with_candidates_1d(5, &[1,2,3,4,5]);
-    let col_var = sys.new_vars_with_candidates_1d(5, &[1,2,3,4,5]);
-    let dri_var = sys.new_vars_with_candidates_1d(5, &[1,2,3,4,5]);
-    let smo_var = sys.new_vars_with_candidates_1d(5, &[1,2,3,4,5]);
-    let pet_var = sys.new_vars_with_candidates_1d(5, &[1,2,3,4,5]);
+    let nat_var = sys.new_vars_with_candidates_1d(5, &[1, 2, 3, 4, 5]);
+    let col_var = sys.new_vars_with_candidates_1d(5, &[1, 2, 3, 4, 5]);
+    let dri_var = sys.new_vars_with_candidates_1d(5, &[1, 2, 3, 4, 5]);
+    let smo_var = sys.new_vars_with_candidates_1d(5, &[1, 2, 3, 4, 5]);
+    let pet_var = sys.new_vars_with_candidates_1d(5, &[1, 2, 3, 4, 5]);
 
     let nat = |n| nat_var[n as usize];
     let col = |n| col_var[n as usize];
@@ -76,11 +110,11 @@ fn zebra() {
     sys.equals(nat(Norwegian), 1);
 
     // #11: The man who smokes Blend lives in the house next to the house with cats.
-    let neighbour11 = sys.new_var_with_candidates(&[-1,1]);
+    let neighbour11 = sys.new_var_with_candidates(&[-1, 1]);
     sys.equals(smo(Blend), pet(Cat) + neighbour11);
 
     // #12: In a house next to the house where they have a horse, they smoke Dunhill.
-    let neighbour12 = sys.new_var_with_candidates(&[-1,1]);
+    let neighbour12 = sys.new_var_with_candidates(&[-1, 1]);
     sys.equals(pet(Horse), smo(Dunhill) + neighbour12);
 
     // #13: The man who smokes Blue Master drinks beer.
@@ -90,23 +124,24 @@ fn zebra() {
     sys.equals(nat(German), smo(Prince));
 
     // #15: The Norwegian lives next to the blue house.
-    let neighbour15 = sys.new_var_with_candidates(&[-1,1]);
+    let neighbour15 = sys.new_var_with_candidates(&[-1, 1]);
     sys.equals(nat(Norwegian), col(Blue) + neighbour15);
 
     // #16: They drink water in a house next to the house where they smoke Blend.
-    let neighbour16 = sys.new_var_with_candidates(&[-1,1]);
+    let neighbour16 = sys.new_var_with_candidates(&[-1, 1]);
     sys.equals(dri(Water), smo(Blend) + neighbour16);
 
     let dict = sys.solve_any().expect("solution");
 
     let expected = [
-        (Norwegian,  Yellow, Water,  Dunhill,    Cat),
-        (Dane,       Blue,   Tea,    Blend,      Horse),
-        (Englishman, Red,    Milk,   PallMall,   Bird),
-        (German,     Green,  Coffee, Prince,     Fish),
-        (Swede,      White,  Beer,   BlueMaster, Dog) ];
+        (Norwegian, Yellow, Water, Dunhill, Cat),
+        (Dane, Blue, Tea, Blend, Horse),
+        (Englishman, Red, Milk, PallMall, Bird),
+        (German, Green, Coffee, Prince, Fish),
+        (Swede, White, Beer, BlueMaster, Dog),
+    ];
 
-    for &(n,c,d,s,p) in expected.iter() {
+    for &(n, c, d, s, p) in expected.iter() {
         assert_eq!(dict[nat(n)], dict[col(c)]);
         assert_eq!(dict[nat(n)], dict[dri(d)]);
         assert_eq!(dict[nat(n)], dict[smo(s)]);

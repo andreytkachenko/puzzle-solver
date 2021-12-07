@@ -7,16 +7,15 @@
 
 use std::rc::Rc;
 
-use crate::{PsResult,PuzzleSearch,Val,VarToken};
+use crate::{PsResult, PuzzleSearch, Val, VarToken};
 
 /// Constraint trait.
 pub trait Constraint {
     /// An iterator over the variables that are involved in the constraint.
-    fn vars<'a>(&'a self) -> Box<dyn Iterator<Item=&'a VarToken> + 'a>;
+    fn vars<'a>(&'a self) -> Box<dyn Iterator<Item = &'a VarToken> + 'a>;
 
     /// Applied after a variable has been assigned.
-    fn on_assigned(&self, _search: &mut PuzzleSearch, _var: VarToken, _val: Val)
-            -> PsResult<()> {
+    fn on_assigned(&self, _search: &mut PuzzleSearch, _var: VarToken, _val: Val) -> PsResult<()> {
         Ok(())
     }
 
@@ -29,8 +28,7 @@ pub trait Constraint {
     ///
     /// Returns a new constraint with all instances of "from" replaced
     /// with "to", or Err if a contradiction was found.
-    fn substitute(&self, from: VarToken, to: VarToken)
-            -> PsResult<Rc<dyn Constraint>>;
+    fn substitute(&self, from: VarToken, to: VarToken) -> PsResult<Rc<dyn Constraint>>;
 }
 
 pub use self::alldifferent::AllDifferent;

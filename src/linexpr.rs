@@ -1,25 +1,29 @@
 //! Linear expressions.
 
-use std::collections::HashMap;
+use num_rational::{Ratio, Rational32};
+use num_traits::{One, Zero};
 use std::collections::hash_map::Entry;
+use std::collections::HashMap;
 use std::convert::From;
-use std::ops::{Add,Mul,Neg,Sub};
-use num_rational::{Ratio,Rational32};
-use num_traits::{One,Zero};
+use std::ops::{Add, Mul, Neg, Sub};
 
-use crate::{Coef,LinExpr,VarToken};
+use crate::{Coef, LinExpr, VarToken};
 
 macro_rules! impl_commutative_op {
     ($LHS:ident + $RHS:ident) => {
         impl Add<$RHS> for $LHS {
             type Output = LinExpr;
-            fn add(self, rhs: $RHS) -> Self::Output { rhs + self }
+            fn add(self, rhs: $RHS) -> Self::Output {
+                rhs + self
+            }
         }
     };
     ($LHS:ident * $RHS:ident) => {
         impl Mul<$RHS> for $LHS {
             type Output = LinExpr;
-            fn mul(self, rhs: $RHS) -> Self::Output { rhs * self }
+            fn mul(self, rhs: $RHS) -> Self::Output {
+                rhs * self
+            }
         }
     };
 }
@@ -28,9 +32,11 @@ macro_rules! impl_subtract_op {
     ($LHS:ident - $RHS:ident) => {
         impl Sub<$RHS> for $LHS {
             type Output = LinExpr;
-            fn sub(self, rhs: $RHS) -> Self::Output { self + (-rhs) }
+            fn sub(self, rhs: $RHS) -> Self::Output {
+                self + (-rhs)
+            }
         }
-    }
+    };
 }
 
 pub trait IntoCoef: Zero {
@@ -38,11 +44,15 @@ pub trait IntoCoef: Zero {
 }
 
 impl IntoCoef for i32 {
-    fn into_coef(self) -> Coef { Ratio::from_integer(self) }
+    fn into_coef(self) -> Coef {
+        Ratio::from_integer(self)
+    }
 }
 
 impl IntoCoef for Rational32 {
-    fn into_coef(self) -> Coef { self }
+    fn into_coef(self) -> Coef {
+        self
+    }
 }
 
 /*--------------------------------------------------------------*/
@@ -196,7 +206,7 @@ impl Add for LinExpr {
             match self.coef.entry(x2) {
                 Entry::Vacant(e) => {
                     e.insert(a2);
-                },
+                }
                 Entry::Occupied(mut e) => {
                     let new_coef = *e.get() + a2;
                     if new_coef.is_zero() {
@@ -204,7 +214,7 @@ impl Add for LinExpr {
                     } else {
                         *e.get_mut() = new_coef;
                     }
-                },
+                }
             }
         }
 
@@ -218,8 +228,8 @@ impl_subtract_op!(LinExpr - LinExpr);
 
 #[cfg(test)]
 mod tests {
-    use num_rational::Ratio;
     use crate::Puzzle;
+    use num_rational::Ratio;
 
     #[test]
     fn test_ops() {

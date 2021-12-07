@@ -5,16 +5,16 @@ extern crate bit_set;
 extern crate num_rational;
 extern crate num_traits;
 
+use num_rational::Rational32;
 use std::collections::HashMap;
 use std::ops;
-use num_rational::Rational32;
 
 pub use crate::constraint::Constraint;
 pub use crate::puzzle::Puzzle;
 pub use crate::puzzle::PuzzleSearch;
 
 /// A puzzle variable token.
-#[derive(Copy,Clone,Debug,Eq,Hash,PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub struct VarToken(usize);
 
 /// The type of a puzzle variable's value (i.e. the candidate type).

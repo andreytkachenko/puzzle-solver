@@ -4,11 +4,11 @@
 
 extern crate puzzle_solver;
 
-use puzzle_solver::{Puzzle,Solution,VarToken};
+use puzzle_solver::{Puzzle, Solution, VarToken};
 
 fn make_send_more_money() -> (Puzzle, Vec<VarToken>) {
     let mut sys = Puzzle::new();
-    let vars = sys.new_vars_with_candidates_1d(8, &[0,1,2,3,4,5,6,7,8,9]);
+    let vars = sys.new_vars_with_candidates_1d(8, &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     let (s, e, n, d) = (vars[0], vars[1], vars[2], vars[3]);
     let (m, o, r, y) = (vars[4], vars[5], vars[6], vars[7]);
 
@@ -32,7 +32,10 @@ fn print_send_more_money(dict: &Solution, vars: &Vec<VarToken>) {
     println!("   {} {} {} {}", dict[s], dict[e], dict[n], dict[d]);
     println!(" + {} {} {} {}", dict[m], dict[o], dict[r], dict[e]);
     println!("----------");
-    println!(" {} {} {} {} {}", dict[m], dict[o], dict[n], dict[e], dict[y]);
+    println!(
+        " {} {} {} {} {}",
+        dict[m], dict[o], dict[n], dict[e], dict[y]
+    );
 }
 
 fn verify_send_more_money(dict: &Solution, vars: &Vec<VarToken>) {
@@ -51,7 +54,7 @@ fn verify_send_more_money(dict: &Solution, vars: &Vec<VarToken>) {
 
 #[test]
 fn sendmoremoney_carry() {
-    let carry = [0,1];
+    let carry = [0, 1];
 
     let (mut sys, vars) = make_send_more_money();
     let (s, e, n, d) = (vars[0], vars[1], vars[2], vars[3]);
@@ -61,10 +64,10 @@ fn sendmoremoney_carry() {
     let c3 = sys.new_var_with_candidates(&carry);
     sys.intersect_candidates(m, &carry); // c4 == m.
 
-    sys.equals(     d + e, 10 * c1 + y);
+    sys.equals(d + e, 10 * c1 + y);
     sys.equals(c1 + n + r, 10 * c2 + e);
     sys.equals(c2 + e + o, 10 * c3 + n);
-    sys.equals(c3 + s + m, 10 *  m + o);
+    sys.equals(c3 + s + m, 10 * m + o);
 
     let dict = sys.solve_unique().expect("solution");
     print_send_more_money(&dict, &vars);

@@ -3,7 +3,7 @@
 use std::iter;
 use std::rc::Rc;
 
-use crate::{Constraint,PsResult,PuzzleSearch,VarToken};
+use crate::{Constraint, PsResult, PuzzleSearch, VarToken};
 
 pub struct Unify {
     var1: VarToken,
@@ -33,7 +33,7 @@ impl Unify {
 }
 
 impl Constraint for Unify {
-    fn vars<'a>(&'a self) -> Box<dyn Iterator<Item=&'a VarToken> + 'a> {
+    fn vars<'a>(&'a self) -> Box<dyn Iterator<Item = &'a VarToken> + 'a> {
         if self.var1 != self.var2 {
             Box::new(iter::once(&self.var1).chain(iter::once(&self.var2)))
         } else {
@@ -49,11 +49,13 @@ impl Constraint for Unify {
         }
     }
 
-    fn substitute(&self, from: VarToken, to: VarToken)
-            -> PsResult<Rc<dyn Constraint>> {
+    fn substitute(&self, from: VarToken, to: VarToken) -> PsResult<Rc<dyn Constraint>> {
         let var1 = if self.var1 == from { to } else { self.var1 };
         let var2 = if self.var2 == from { to } else { self.var2 };
-        Ok(Rc::new(Unify{ var1: var1, var2: var2 }))
+        Ok(Rc::new(Unify {
+            var1: var1,
+            var2: var2,
+        }))
     }
 }
 
@@ -64,8 +66,8 @@ mod tests {
     #[test]
     fn test_unify_alldifferent() {
         let mut puzzle = Puzzle::new();
-        let v0 = puzzle.new_var_with_candidates(&[1,2]);
-        let v1 = puzzle.new_var_with_candidates(&[1,2]);
+        let v0 = puzzle.new_var_with_candidates(&[1, 2]);
+        let v1 = puzzle.new_var_with_candidates(&[1, 2]);
 
         puzzle.all_different(&[v0, v1]);
         puzzle.unify(v0, v1);
@@ -77,9 +79,9 @@ mod tests {
     #[test]
     fn test_unify_equality() {
         let mut puzzle = Puzzle::new();
-        let v0 = puzzle.new_var_with_candidates(&[1,2,3,4]);
-        let v1 = puzzle.new_var_with_candidates(&[1,2,3,4]);
-        let v2 = puzzle.new_var_with_candidates(&[1,2,3,4]);
+        let v0 = puzzle.new_var_with_candidates(&[1, 2, 3, 4]);
+        let v1 = puzzle.new_var_with_candidates(&[1, 2, 3, 4]);
+        let v2 = puzzle.new_var_with_candidates(&[1, 2, 3, 4]);
 
         puzzle.equals(v0 + 2 * v1 + v2, 6);
         puzzle.unify(v0, v1);
@@ -94,8 +96,8 @@ mod tests {
     fn test_unify_unify() {
         let mut puzzle = Puzzle::new();
         let v0 = puzzle.new_var_with_candidates(&[1]);
-        let v1 = puzzle.new_var_with_candidates(&[1,2,3,4]);
-        let v2 = puzzle.new_var_with_candidates(&[1,2,3,4]);
+        let v1 = puzzle.new_var_with_candidates(&[1, 2, 3, 4]);
+        let v2 = puzzle.new_var_with_candidates(&[1, 2, 3, 4]);
 
         puzzle.unify(v0, v1);
         puzzle.unify(v1, v2);

@@ -1,5 +1,6 @@
 //! The puzzle's state and rules.
 
+use bit_set::BitSet;
 use std::cell::Cell;
 use std::collections::BTreeSet;
 use std::fmt;
@@ -7,21 +8,20 @@ use std::iter;
 use std::mem;
 use std::ops;
 use std::rc::Rc;
-use bit_set::BitSet;
 
-use crate::{Constraint,LinExpr,PsResult,Solution,Val,VarToken};
 use crate::constraint;
+use crate::{Constraint, LinExpr, PsResult, Solution, Val, VarToken};
 
 /// A collection of candidates.
-#[derive(Clone,Debug,Eq,PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 enum Candidates {
-    None,                       // A variable with no candidates.
-    Value(Val),                 // A variable set to its initial value.
-    Set(Rc<BTreeSet<Val>>),     // A variable with a list of candidates.
+    None,                   // A variable with no candidates.
+    Value(Val),             // A variable set to its initial value.
+    Set(Rc<BTreeSet<Val>>), // A variable with a list of candidates.
 }
 
 /// The state of a variable during the solution search.
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 enum VarState {
     Assigned(Val),
     Unassigned(Candidates),
@@ -78,7 +78,7 @@ impl Candidates {
     }
 
     /// Get an iterator over all of the candidates of a variable.
-    fn iter<'a>(&'a self) -> Box<dyn Iterator<Item=Val> + 'a> {
+    fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = Val> + 'a> {
         match self {
             &Candidates::None => Box::new(iter::empty()),
             &Candidates::Value(val) => Box::new(iter::once(val)),
@@ -146,8 +146,7 @@ impl Puzzle {
     /// let mut send_more_money = puzzle_solver::Puzzle::new();
     /// send_more_money.new_vars_with_candidates_1d(8, &[0,1,2,3,4,5,6,7,8,9]);
     /// ```
-    pub fn new_vars_with_candidates_1d(&mut self, n: usize, candidates: &[Val])
-            -> Vec<VarToken> {
+    pub fn new_vars_with_candidates_1d(&mut self, n: usize, candidates: &[Val]) -> Vec<VarToken> {
         let mut vars = Vec::with_capacity(n);
         for _ in 0..n {
             vars.push(self.new_var_with_candidates(candidates));
@@ -164,9 +163,12 @@ impl Puzzle {
     /// let mut magic_square = puzzle_solver::Puzzle::new();
     /// magic_square.new_vars_with_candidates_2d(3, 3, &[1,2,3,4,5,6,7,8,9]);
     /// ```
-    pub fn new_vars_with_candidates_2d(self: &mut Puzzle,
-            width: usize, height: usize, candidates: &[Val])
-            -> Vec<Vec<VarToken>> {
+    pub fn new_vars_with_candidates_2d(
+        self: &mut Puzzle,
+        width: usize,
+        height: usize,
+        candidates: &[Val],
+    ) -> Vec<Vec<VarToken>> {
         let mut vars = Vec::with_capacity(height);
         for _ in 0..height {
             vars.push(self.new_vars_with_candidates_1d(width, candidates));
@@ -216,12 +218,11 @@ impl Puzzle {
         let VarToken(idx) = var;
 
         match &self.candidates[idx] {
-            &Candidates::Value(_) =>
-                panic!("attempt to set fixed variable"),
+            &Candidates::Value(_) => panic!("attempt to set fixed variable"),
 
             &Candidates::None => {
                 self.candidates[idx] = Candidates::Set(Rc::new(BTreeSet::new()));
-            },
+            }
 
             &Candidates::Set(_) => (),
         }
@@ -250,8 +251,7 @@ impl Puzzle {
         let VarToken(idx) = var;
 
         match self.candidates[idx] {
-            Candidates::Value(_) =>
-                panic!("attempt to set fixed variable"),
+            Candidates::Value(_) => panic!("attempt to set fixed variable"),
 
             Candidates::None => (),
 
@@ -260,7 +260,7 @@ impl Puzzle {
                 for c in candidates.iter() {
                     cs.remove(c);
                 }
-            },
+            }
         }
     }
 
@@ -281,8 +281,7 @@ impl Puzzle {
         let VarToken(idx) = var;
 
         match self.candidates[idx] {
-            Candidates::Value(_) =>
-                panic!("attempt to set fixed variable"),
+            Candidates::Value(_) => panic!("attempt to set fixed variable"),
 
             Candidates::None => (),
 
@@ -291,13 +290,15 @@ impl Puzzle {
                 let mut set = BTreeSet::new();
                 set.extend(candidates);
                 *cs = cs.intersection(&set).cloned().collect();
-            },
+            }
         }
     }
 
     /// Add a constraint to the puzzle solution.
     pub fn add_constraint<T>(&mut self, constraint: T)
-            where T: Constraint + 'static {
+    where
+        T: Constraint + 'static,
+    {
         self.constraints.push(Rc::new(constraint));
     }
 
@@ -313,7 +314,9 @@ impl Puzzle {
     /// send_more_money.all_different(&vars);
     /// ```
     pub fn all_different<'a, I>(&mut self, vars: I)
-            where I: IntoIterator<Item=&'a VarToken> {
+    where
+        I: IntoIterator<Item = &'a VarToken>,
+    {
         self.add_constraint(constraint::AllDifferent::new(vars));
     }
 
@@ -328,8 +331,11 @@ impl Puzzle {
     ///
     /// magic_square.equals(vars[0][0] + vars[0][1] + vars[0][2], 15);
     /// ```
-    pub fn equals<L,R>(&mut self, lhs: L, rhs: R)
-            where L: Into<LinExpr>, R: Into<LinExpr> {
+    pub fn equals<L, R>(&mut self, lhs: L, rhs: R)
+    where
+        L: Into<LinExpr>,
+        R: Into<LinExpr>,
+    {
         self.add_constraint(constraint::Equality::new(lhs.into() - rhs.into()));
     }
 
@@ -479,8 +485,7 @@ impl PuzzleConstraints {
     }
 
     /// Determine which variables wake up which constraints.
-    fn init_wake(constraints: &Vec<Rc<dyn Constraint>>, num_vars: usize)
-            -> Vec<BitSet> {
+    fn init_wake(constraints: &Vec<Rc<dyn Constraint>>, num_vars: usize) -> Vec<BitSet> {
         let mut wake = vec![BitSet::new(); num_vars];
         for cidx in 0..constraints.len() {
             for &VarToken(idx) in constraints[cidx].vars() {
@@ -498,8 +503,11 @@ impl<'a> PuzzleSearch<'a> {
     /// Allocate a new puzzle searcher.
     fn new(puzzle: &'a Puzzle) -> Self {
         let constraints = PuzzleConstraints::new(puzzle);
-        let vars = puzzle.candidates.iter().map(|cs|
-                VarState::Unassigned(cs.clone())).collect();
+        let vars = puzzle
+            .candidates
+            .iter()
+            .map(|cs| VarState::Unassigned(cs.clone()))
+            .collect();
         let mut wake = BitSet::new();
 
         for cidx in 0..constraints.constraints.len() {
@@ -538,8 +546,7 @@ impl<'a> PuzzleSearch<'a> {
     }
 
     /// Get an iterator over the candidates to an unassigned variable.
-    pub fn get_unassigned(&'a self, var: VarToken)
-            -> Box<dyn Iterator<Item=Val> + 'a> {
+    pub fn get_unassigned(&'a self, var: VarToken) -> Box<dyn Iterator<Item = Val> + 'a> {
         let VarToken(idx) = var;
         match &self.vars[idx] {
             &VarState::Assigned(_) => Box::new(iter::empty()),
@@ -556,19 +563,21 @@ impl<'a> PuzzleSearch<'a> {
             &VarState::Unassigned(ref cs) => match cs {
                 &Candidates::None => Err(()),
                 &Candidates::Value(val) => Ok((val, val)),
-                &Candidates::Set(ref rc) => {
-                    rc.iter().cloned().min().into_iter()
-                        .zip(rc.iter().cloned().max()).next()
-                        .ok_or(())
-                }
+                &Candidates::Set(ref rc) => rc
+                    .iter()
+                    .cloned()
+                    .min()
+                    .into_iter()
+                    .zip(rc.iter().cloned().max())
+                    .next()
+                    .ok_or(()),
             },
             &VarState::Unified(other) => self.get_min_max(other),
         }
     }
 
     /// Set a variable to a value.
-    pub fn set_candidate(&mut self, var: VarToken, val: Val)
-            -> PsResult<()> {
+    pub fn set_candidate(&mut self, var: VarToken, val: Val) -> PsResult<()> {
         let VarToken(idx) = var;
 
         match &self.vars[idx] {
@@ -583,8 +592,7 @@ impl<'a> PuzzleSearch<'a> {
 
         if let &VarState::Unified(other) = &self.vars[idx] {
             self.set_candidate(other, val)
-        } else if let &mut VarState::Unassigned(Candidates::Set(ref mut rc))
-                = &mut self.vars[idx] {
+        } else if let &mut VarState::Unassigned(Candidates::Set(ref mut rc)) = &mut self.vars[idx] {
             if rc.contains(&val) {
                 let mut set = Rc::make_mut(rc);
                 set.clear();
@@ -600,8 +608,7 @@ impl<'a> PuzzleSearch<'a> {
     }
 
     /// Remove a single candidate from a variable.
-    pub fn remove_candidate(&mut self, var: VarToken, val: Val)
-            -> PsResult<()> {
+    pub fn remove_candidate(&mut self, var: VarToken, val: Val) -> PsResult<()> {
         let VarToken(idx) = var;
 
         match &self.vars[idx] {
@@ -616,8 +623,7 @@ impl<'a> PuzzleSearch<'a> {
 
         if let &VarState::Unified(other) = &self.vars[idx] {
             self.remove_candidate(other, val)
-        } else if let &mut VarState::Unassigned(Candidates::Set(ref mut rc))
-                = &mut self.vars[idx] {
+        } else if let &mut VarState::Unassigned(Candidates::Set(ref mut rc)) = &mut self.vars[idx] {
             if rc.contains(&val) {
                 let mut set = Rc::make_mut(rc);
                 set.remove(&val);
@@ -630,25 +636,31 @@ impl<'a> PuzzleSearch<'a> {
     }
 
     /// Bound an variable to the given range.
-    pub fn bound_candidate_range(&mut self, var: VarToken, min: Val, max: Val)
-            -> PsResult<(Val, Val)> {
+    pub fn bound_candidate_range(
+        &mut self,
+        var: VarToken,
+        min: Val,
+        max: Val,
+    ) -> PsResult<(Val, Val)> {
         let VarToken(idx) = var;
 
         match &self.vars[idx] {
-            &VarState::Assigned(v) =>
+            &VarState::Assigned(v) => {
                 if min <= v && v <= max {
-                    return Ok((v, v))
+                    return Ok((v, v));
                 } else {
-                    return Err(())
-                },
+                    return Err(());
+                }
+            }
             &VarState::Unassigned(ref cs) => match cs {
                 &Candidates::None => return Err(()),
-                &Candidates::Value(v) =>
+                &Candidates::Value(v) => {
                     if min <= v && v <= max {
-                        return Ok((v, v))
+                        return Ok((v, v));
                     } else {
-                        return Err(())
-                    },
+                        return Err(());
+                    }
+                }
                 &Candidates::Set(_) => (),
             },
             &VarState::Unified(_) => (),
@@ -656,22 +668,26 @@ impl<'a> PuzzleSearch<'a> {
 
         if let &VarState::Unified(other) = &self.vars[idx] {
             self.bound_candidate_range(other, min, max)
-        } else if let &mut VarState::Unassigned(Candidates::Set(ref mut rc))
-                = &mut self.vars[idx] {
+        } else if let &mut VarState::Unassigned(Candidates::Set(ref mut rc)) = &mut self.vars[idx] {
             let &curr_min = rc.iter().min().expect("candidates");
             let &curr_max = rc.iter().max().expect("candidates");
 
             if curr_min < min || max < curr_max {
                 {
                     let mut set = Rc::make_mut(rc);
-                    *set = set.iter()
+                    *set = set
+                        .iter()
                         .filter(|&val| min <= *val && *val <= max)
                         .cloned()
                         .collect();
                     self.wake.union_with(&self.constraints.wake[idx]);
                 }
-                rc.iter().cloned().min().into_iter()
-                    .zip(rc.iter().cloned().max()).next()
+                rc.iter()
+                    .cloned()
+                    .min()
+                    .into_iter()
+                    .zip(rc.iter().cloned().max())
+                    .next()
                     .ok_or(())
             } else {
                 Ok((curr_min, curr_max))
@@ -687,11 +703,14 @@ impl<'a> PuzzleSearch<'a> {
             return;
         }
 
-        let next_unassigned = self.vars.iter().enumerate().min_by_key(
-                |&(_, vs)| match vs {
-                    &VarState::Unassigned(ref cs) => cs.len(),
-                    _ => ::std::usize::MAX,
-                });
+        let next_unassigned = self
+            .vars
+            .iter()
+            .enumerate()
+            .min_by_key(|&(_, vs)| match vs {
+                &VarState::Unassigned(ref cs) => cs.len(),
+                _ => ::std::usize::MAX,
+            });
 
         if let Some((idx, &VarState::Unassigned(ref cs))) = next_unassigned {
             if cs.len() == 0 {
@@ -716,9 +735,10 @@ impl<'a> PuzzleSearch<'a> {
             }
         } else {
             // No unassigned variables remaining.
-            let vars = (0..self.puzzle.num_vars).map(|idx|
-                    self[VarToken(idx)]).collect();
-            solutions.push(Solution{ vars: vars });
+            let vars = (0..self.puzzle.num_vars)
+                .map(|idx| self[VarToken(idx)])
+                .collect();
+            solutions.push(Solution { vars: vars });
         }
     }
 
@@ -784,8 +804,7 @@ impl<'a> PuzzleSearch<'a> {
     }
 
     /// Unify the "from" variable with the "to" variable.
-    pub fn unify(&mut self, from: VarToken, to: VarToken)
-            -> PsResult<()> {
+    pub fn unify(&mut self, from: VarToken, to: VarToken) -> PsResult<()> {
         if from == to {
             return Ok(());
         }
@@ -796,19 +815,19 @@ impl<'a> PuzzleSearch<'a> {
             let VarToken(search) = from;
             let VarToken(replace) = to;
             match (&self.vars[search], &self.vars[replace]) {
-                (&VarState::Assigned(val1), &VarState::Assigned(val2)) =>
-                    return bool_to_result(val1 == val2),
+                (&VarState::Assigned(val1), &VarState::Assigned(val2)) => {
+                    return bool_to_result(val1 == val2)
+                }
 
                 // Unified variables should have been substituted out previously.
-                (&VarState::Unified(_), _) | (_, &VarState::Unified(_)) =>
-                    panic!("internal representation corrupt"),
+                (&VarState::Unified(_), _) | (_, &VarState::Unified(_)) => {
+                    panic!("internal representation corrupt")
+                }
 
-                (&VarState::Unassigned(_), &VarState::Assigned(_)) =>
-                    (to, from),
+                (&VarState::Unassigned(_), &VarState::Assigned(_)) => (to, from),
 
                 (&VarState::Assigned(_), &VarState::Unassigned(_))
-                | (&VarState::Unassigned(_), &VarState::Unassigned(_)) =>
-                    (from, to),
+                | (&VarState::Unassigned(_), &VarState::Unassigned(_)) => (from, to),
             }
         };
 
@@ -825,9 +844,11 @@ impl<'a> PuzzleSearch<'a> {
         if let &VarState::Assigned(val) = &self.vars[search] {
             r#try!(self.set_candidate(to, val));
         } else {
-            if let (&mut VarState::Unassigned(Candidates::Set(ref mut rc1)),
-                    &mut VarState::Unassigned(Candidates::Set(ref mut rc2)))
-                    = get_two_mut(&mut self.vars, search, replace) {
+            if let (
+                &mut VarState::Unassigned(Candidates::Set(ref mut rc1)),
+                &mut VarState::Unassigned(Candidates::Set(ref mut rc2)),
+            ) = get_two_mut(&mut self.vars, search, replace)
+            {
                 *rc2 = Rc::new(rc2.intersection(rc1).cloned().collect());
                 if rc2.is_empty() {
                     return Err(());
@@ -848,16 +869,16 @@ impl<'a> fmt::Debug for PuzzleSearch<'a> {
             match var {
                 &VarState::Assigned(val) => {
                     write!(f, "  var {}: {}", idx, val)?;
-                },
+                }
                 &VarState::Unassigned(ref cs) => {
                     write!(f, "  var {}:", idx)?;
                     for val in cs.iter() {
                         write!(f, " {}", val)?;
                     }
-                },
+                }
                 &VarState::Unified(VarToken(other)) => {
                     write!(f, "  var {}: var {}", idx, other)?;
-                },
+                }
             }
         }
         write!(f, "}}")?;
@@ -891,8 +912,7 @@ fn bool_to_result(cond: bool) -> PsResult<()> {
     }
 }
 
-fn get_two_mut<'a, T>(slice: &'a mut [T], a: usize, b: usize)
-        -> (&'a mut T, &'a mut T) {
+fn get_two_mut<'a, T>(slice: &'a mut [T], a: usize, b: usize) -> (&'a mut T, &'a mut T) {
     assert!(a != b);
     if a < b {
         let (mut l, mut r) = slice.split_at_mut(b);
