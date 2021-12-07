@@ -19,7 +19,7 @@ struct BinaryRepr {
 }
 
 impl Constraint for BinaryRepr {
-    fn vars<'a>(&'a self) -> Box<Iterator<Item=&'a VarToken> + 'a> {
+    fn vars<'a>(&'a self) -> Box<dyn Iterator<Item=&'a VarToken> + 'a> {
         Box::new(iter::once(&self.value).chain(&self.bits))
     }
 
@@ -28,7 +28,7 @@ impl Constraint for BinaryRepr {
         if var == self.value {
             let mut val = val;
             for &var in self.bits.iter() {
-                try!(search.set_candidate(var, val & 1));
+                r#try!(search.set_candidate(var, val & 1));
                 val = val >> 1;
             }
         } else if let Some(bitpos) = self.bits.iter().position(|&v| v == var) {
@@ -38,7 +38,7 @@ impl Constraint for BinaryRepr {
                 .collect::<Vec<_>>();
 
             for c in discard.into_iter() {
-                try!(search.remove_candidate(self.value, c));
+                r#try!(search.remove_candidate(self.value, c));
             }
         }
 
@@ -46,7 +46,7 @@ impl Constraint for BinaryRepr {
     }
 
     fn substitute(&self, _from: VarToken, _to: VarToken)
-            -> PsResult<Rc<Constraint>> {
+            -> PsResult<Rc<dyn Constraint>> {
         unimplemented!();
     }
 }

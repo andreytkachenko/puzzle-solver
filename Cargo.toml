@@ -10,6 +10,7 @@ license = "MIT"
 readme = "README.md"
 keywords = ["constraint", "finite", "domain", "puzzle", "sudoku"]
 categories = ["science"]
+edition = "2021"
 
 [dependencies]
 bit-set = "0.4"

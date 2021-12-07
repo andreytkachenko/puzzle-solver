@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use ::{Constraint,PsResult,PuzzleSearch,Val,VarToken};
+use crate::{Constraint,PsResult,PuzzleSearch,Val,VarToken};
 
 pub struct AllDifferent {
     vars: Vec<VarToken>,
@@ -30,14 +30,14 @@ impl AllDifferent {
 }
 
 impl Constraint for AllDifferent {
-    fn vars<'a>(&'a self) -> Box<Iterator<Item=&'a VarToken> + 'a> {
+    fn vars<'a>(&'a self) -> Box<dyn Iterator<Item=&'a VarToken> + 'a> {
         Box::new(self.vars.iter())
     }
 
     fn on_assigned(&self, search: &mut PuzzleSearch, var: VarToken, val: Val)
             -> PsResult<()> {
         for &var2 in self.vars.iter().filter(|&v| *v != var) {
-            try!(search.remove_candidate(var2, val));
+            r#try!(search.remove_candidate(var2, val));
         }
 
         Ok(())
@@ -67,7 +67,7 @@ impl Constraint for AllDifferent {
             // As many as variables as candidates.
             for (&val, &opt) in all_candidates.iter() {
                 if let Some(var) = opt {
-                    try!(search.set_candidate(var, val));
+                    r#try!(search.set_candidate(var, val));
                 }
             }
         }
@@ -76,7 +76,7 @@ impl Constraint for AllDifferent {
     }
 
     fn substitute(&self, from: VarToken, to: VarToken)
-            -> PsResult<Rc<Constraint>> {
+            -> PsResult<Rc<dyn Constraint>> {
         if let Some(idx) = self.vars.iter().position(|&var| var == from) {
             if !self.vars.contains(&to) {
                 let mut new_vars = self.vars.clone();
@@ -91,7 +91,7 @@ impl Constraint for AllDifferent {
 
 #[cfg(test)]
 mod tests {
-    use ::{Puzzle,Val};
+    use crate::{Puzzle,Val};
 
     #[test]
     fn test_contradiction() {

@@ -26,7 +26,7 @@ enum Pet { Bird, Cat, Dog, Fish, Horse }
 
 #[test]
 fn zebra() {
-    use Nat::*; use Col::*; use Dri::*; use Smo::*; use Pet::*;
+    use crate::Nat::*; use crate::Col::*; use crate::Dri::*; use crate::Smo::*; use crate::Pet::*;
 
     // #1: There are five houses.
     let mut sys = Puzzle::new();

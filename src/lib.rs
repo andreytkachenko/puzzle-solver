@@ -9,9 +9,9 @@ use std::collections::HashMap;
 use std::ops;
 use num_rational::Rational32;
 
-pub use constraint::Constraint;
-pub use puzzle::Puzzle;
-pub use puzzle::PuzzleSearch;
+pub use crate::constraint::Constraint;
+pub use crate::puzzle::Puzzle;
+pub use crate::puzzle::PuzzleSearch;
 
 /// A puzzle variable token.
 #[derive(Copy,Clone,Debug,Eq,Hash,PartialEq)]

@@ -12,7 +12,7 @@ struct NoDiagonal {
 }
 
 impl Constraint for NoDiagonal {
-    fn vars<'a>(&'a self) -> Box<Iterator<Item=&'a VarToken> + 'a> {
+    fn vars<'a>(&'a self) -> Box<dyn Iterator<Item=&'a VarToken> + 'a> {
         Box::new(self.vars.iter())
     }
 
@@ -23,8 +23,8 @@ impl Constraint for NoDiagonal {
             if !search.is_assigned(var2) {
                 let x1 = val;
                 let dy = (y1 as Val) - (y2 as Val);
-                try!(search.remove_candidate(var2, x1 - dy));
-                try!(search.remove_candidate(var2, x1 + dy));
+                r#try!(search.remove_candidate(var2, x1 - dy));
+                r#try!(search.remove_candidate(var2, x1 + dy));
             }
         }
 
@@ -32,7 +32,7 @@ impl Constraint for NoDiagonal {
     }
 
     fn substitute(&self, _from: VarToken, _to: VarToken)
-            -> PsResult<Rc<Constraint>> {
+            -> PsResult<Rc<dyn Constraint>> {
         unimplemented!();
     }
 }

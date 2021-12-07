@@ -140,7 +140,7 @@ impl Nonogram {
 }
 
 impl Constraint for Nonogram {
-    fn vars<'a>(&'a self) -> Box<Iterator<Item=&'a VarToken> + 'a> {
+    fn vars<'a>(&'a self) -> Box<dyn Iterator<Item=&'a VarToken> + 'a> {
         Box::new(self.vars.iter())
     }
 
@@ -162,9 +162,9 @@ impl Constraint for Nonogram {
             AutoFillResult::SolutionFound =>
                 for idx in 0..self.vars.len() {
                     if accum[idx] == FLAG_UNKNOWN | FLAG_OFF {
-                        try!(search.set_candidate(self.vars[idx], 0));
+                        r#try!(search.set_candidate(self.vars[idx], 0));
                     } else if accum[idx] == FLAG_UNKNOWN | FLAG_ON {
-                        try!(search.set_candidate(self.vars[idx], 1));
+                        r#try!(search.set_candidate(self.vars[idx], 1));
                     }
                 },
         }
@@ -173,7 +173,7 @@ impl Constraint for Nonogram {
     }
 
     fn substitute(&self, _search: VarToken, _replace: VarToken)
-            -> PsResult<Rc<Constraint>> {
+            -> PsResult<Rc<dyn Constraint>> {
         unimplemented!();
     }
 }

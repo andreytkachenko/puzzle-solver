@@ -3,7 +3,7 @@
 use std::iter;
 use std::rc::Rc;
 
-use ::{Constraint,PsResult,PuzzleSearch,VarToken};
+use crate::{Constraint,PsResult,PuzzleSearch,VarToken};
 
 pub struct Unify {
     var1: VarToken,
@@ -33,7 +33,7 @@ impl Unify {
 }
 
 impl Constraint for Unify {
-    fn vars<'a>(&'a self) -> Box<Iterator<Item=&'a VarToken> + 'a> {
+    fn vars<'a>(&'a self) -> Box<dyn Iterator<Item=&'a VarToken> + 'a> {
         if self.var1 != self.var2 {
             Box::new(iter::once(&self.var1).chain(iter::once(&self.var2)))
         } else {
@@ -50,7 +50,7 @@ impl Constraint for Unify {
     }
 
     fn substitute(&self, from: VarToken, to: VarToken)
-            -> PsResult<Rc<Constraint>> {
+            -> PsResult<Rc<dyn Constraint>> {
         let var1 = if self.var1 == from { to } else { self.var1 };
         let var2 = if self.var2 == from { to } else { self.var2 };
         Ok(Rc::new(Unify{ var1: var1, var2: var2 }))
@@ -59,7 +59,7 @@ impl Constraint for Unify {
 
 #[cfg(test)]
 mod tests {
-    use ::Puzzle;
+    use crate::Puzzle;
 
     #[test]
     fn test_unify_alldifferent() {

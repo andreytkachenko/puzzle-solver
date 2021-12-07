@@ -4,7 +4,7 @@ use std::rc::Rc;
 use num_rational::Ratio;
 use num_traits::Zero;
 
-use ::{Constraint,LinExpr,PsResult,PuzzleSearch,Val,VarToken};
+use crate::{Constraint,LinExpr,PsResult,PuzzleSearch,Val,VarToken};
 
 pub struct Equality {
     // The equation: 0 = constant + coef1 * var1 + coef2 * var2 + ...
@@ -32,7 +32,7 @@ impl Equality {
 }
 
 impl Constraint for Equality {
-    fn vars<'a>(&'a self) -> Box<Iterator<Item=&'a VarToken> + 'a> {
+    fn vars<'a>(&'a self) -> Box<dyn Iterator<Item=&'a VarToken> + 'a> {
         Box::new(self.eqn.coef.keys())
     }
 
@@ -60,7 +60,7 @@ impl Constraint for Equality {
             // sum + coef * var = 0.
             let val = -sum / coef;
             if val.is_integer() {
-                try!(search.set_candidate(var, val.to_integer()));
+                r#try!(search.set_candidate(var, val.to_integer()));
             } else {
                 return Err(());
             }
@@ -78,7 +78,7 @@ impl Constraint for Equality {
         let mut sum_max = self.eqn.constant;
 
         for (&var, &coef) in self.eqn.coef.iter() {
-            let (min_val, max_val) = try!(search.get_min_max(var));
+            let (min_val, max_val) = r#try!(search.get_min_max(var));
             if coef > Ratio::zero() {
                 sum_min = sum_min + coef * Ratio::from_integer(min_val);
                 sum_max = sum_max + coef * Ratio::from_integer(max_val);
@@ -104,7 +104,7 @@ impl Constraint for Equality {
                 continue;
             }
 
-            let (min_val, max_val) = try!(search.get_min_max(var));
+            let (min_val, max_val) = r#try!(search.get_min_max(var));
             let (min_bnd, max_bnd);
 
             if coef > Ratio::zero() {
@@ -117,7 +117,7 @@ impl Constraint for Equality {
 
             if min_val < min_bnd || max_bnd < max_val {
                 let (new_min, new_max)
-                    = try!(search.bound_candidate_range(var, min_bnd, max_bnd));
+                    = r#try!(search.bound_candidate_range(var, min_bnd, max_bnd));
 
                 if coef > Ratio::zero() {
                     sum_min = sum_min + coef * Ratio::from_integer(new_min - min_val);
@@ -135,7 +135,7 @@ impl Constraint for Equality {
     }
 
     fn substitute(&self, from: VarToken, to: VarToken)
-            -> PsResult<Rc<Constraint>> {
+            -> PsResult<Rc<dyn Constraint>> {
         let mut eqn = self.eqn.clone();
         if let Some(coef) = eqn.coef.remove(&from) {
             eqn = eqn + coef * to;
@@ -147,7 +147,7 @@ impl Constraint for Equality {
 
 #[cfg(test)]
 mod tests {
-    use ::{Puzzle,Val};
+    use crate::{Puzzle,Val};
 
     #[test]
     fn test_contradiction() {

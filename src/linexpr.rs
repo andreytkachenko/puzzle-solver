@@ -7,7 +7,7 @@ use std::ops::{Add,Mul,Neg,Sub};
 use num_rational::{Ratio,Rational32};
 use num_traits::{One,Zero};
 
-use ::{Coef,LinExpr,VarToken};
+use crate::{Coef,LinExpr,VarToken};
 
 macro_rules! impl_commutative_op {
     ($LHS:ident + $RHS:ident) => {
@@ -219,7 +219,7 @@ impl_subtract_op!(LinExpr - LinExpr);
 #[cfg(test)]
 mod tests {
     use num_rational::Ratio;
-    use ::Puzzle;
+    use crate::Puzzle;
 
     #[test]
     fn test_ops() {

@@ -9,8 +9,8 @@ use std::ops;
 use std::rc::Rc;
 use bit_set::BitSet;
 
-use ::{Constraint,LinExpr,PsResult,Solution,Val,VarToken};
-use constraint;
+use crate::{Constraint,LinExpr,PsResult,Solution,Val,VarToken};
+use crate::constraint;
 
 /// A collection of candidates.
 #[derive(Clone,Debug,Eq,PartialEq)]
@@ -40,14 +40,14 @@ pub struct Puzzle {
     candidates: Vec<Candidates>,
 
     // The list of puzzle constraints.
-    constraints: Vec<Rc<Constraint>>,
+    constraints: Vec<Rc<dyn Constraint>>,
 }
 
 /// The puzzle constraints, and the variables that wake them up.
 struct PuzzleConstraints {
     // The list of puzzle constraints, possibly with variables
     // substituted out.
-    constraints: Vec<Rc<Constraint>>,
+    constraints: Vec<Rc<dyn Constraint>>,
 
     // The list of constraints that each variable affects.  These will
     // be woken up when the variable's candidates are changed.
@@ -78,7 +78,7 @@ impl Candidates {
     }
 
     /// Get an iterator over all of the candidates of a variable.
-    fn iter<'a>(&'a self) -> Box<Iterator<Item=Val> + 'a> {
+    fn iter<'a>(&'a self) -> Box<dyn Iterator<Item=Val> + 'a> {
         match self {
             &Candidates::None => Box::new(iter::empty()),
             &Candidates::Value(val) => Box::new(iter::once(val)),
@@ -467,7 +467,7 @@ impl PuzzleConstraints {
         let mut new_constraints = self.constraints.clone();
 
         for cidx in self.wake[idx].iter() {
-            let rc = try!(self.constraints[cidx].substitute(from, to));
+            let rc = r#try!(self.constraints[cidx].substitute(from, to));
             new_constraints[cidx] = rc;
         }
 
@@ -479,7 +479,7 @@ impl PuzzleConstraints {
     }
 
     /// Determine which variables wake up which constraints.
-    fn init_wake(constraints: &Vec<Rc<Constraint>>, num_vars: usize)
+    fn init_wake(constraints: &Vec<Rc<dyn Constraint>>, num_vars: usize)
             -> Vec<BitSet> {
         let mut wake = vec![BitSet::new(); num_vars];
         for cidx in 0..constraints.len() {
@@ -539,7 +539,7 @@ impl<'a> PuzzleSearch<'a> {
 
     /// Get an iterator over the candidates to an unassigned variable.
     pub fn get_unassigned(&'a self, var: VarToken)
-            -> Box<Iterator<Item=Val> + 'a> {
+            -> Box<dyn Iterator<Item=Val> + 'a> {
         let VarToken(idx) = var;
         match &self.vars[idx] {
             &VarState::Assigned(_) => Box::new(iter::empty()),
@@ -731,7 +731,7 @@ impl<'a> PuzzleSearch<'a> {
         for cidx in 0..self.constraints.constraints.len() {
             if self.constraints.wake[idx].contains(cidx) {
                 let constraint = self.constraints.constraints[cidx].clone();
-                try!(constraint.on_assigned(self, var, val));
+                r#try!(constraint.on_assigned(self, var, val));
             }
         }
 
@@ -761,7 +761,7 @@ impl<'a> PuzzleSearch<'a> {
                 };
 
                 if let Some(val) = gimme {
-                    try!(self.assign(idx, val));
+                    r#try!(self.assign(idx, val));
                     last_gimme = idx;
                 } else if idx == last_gimme {
                     break;
@@ -775,7 +775,7 @@ impl<'a> PuzzleSearch<'a> {
                 let wake = mem::replace(&mut self.wake, BitSet::new());
                 for cidx in wake.iter() {
                     let constraint = self.constraints.constraints[cidx].clone();
-                    try!(constraint.on_updated(self));
+                    r#try!(constraint.on_updated(self));
                 }
             }
         }
@@ -816,14 +816,14 @@ impl<'a> PuzzleSearch<'a> {
         let VarToken(replace) = to;
 
         // Create new constraints to reflect the unification.
-        let new_constraints = try!(self.constraints.substitute(from, to));
+        let new_constraints = r#try!(self.constraints.substitute(from, to));
         self.constraints = Rc::new(new_constraints);
         self.wake.union_with(&self.constraints.wake[replace]);
         assert!(self.constraints.wake[search].is_empty());
 
         // Take intersection of the candidates.
         if let &VarState::Assigned(val) = &self.vars[search] {
-            try!(self.set_candidate(to, val));
+            r#try!(self.set_candidate(to, val));
         } else {
             if let (&mut VarState::Unassigned(Candidates::Set(ref mut rc1)),
                     &mut VarState::Unassigned(Candidates::Set(ref mut rc2)))
@@ -905,7 +905,7 @@ fn get_two_mut<'a, T>(slice: &'a mut [T], a: usize, b: usize)
 
 #[cfg(test)]
 mod tests {
-    use ::Puzzle;
+    use crate::Puzzle;
 
     #[test]
     fn test_no_vars() {
