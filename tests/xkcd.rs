@@ -43,7 +43,7 @@ fn xkcd_knapsack() {
     assert_eq!(solutions.len(), 2);
 
     for dict in solutions.iter() {
-        println!("");
+        println!();
         for (&var, &(cost, string)) in vars.iter().zip(menu.iter()) {
             let numer = cost.numer().to_f32().unwrap();
             let denom = cost.denom().to_f32().unwrap();

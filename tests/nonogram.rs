@@ -38,10 +38,10 @@ enum AutoFillResult {
 }
 
 impl Nonogram {
-    fn new(vars: &Vec<VarToken>, rule: &Vec<usize>) -> Self {
+    fn new(vars: &[VarToken], rule: &[usize]) -> Self {
         Nonogram {
-            vars: vars.clone(),
-            rule: rule.clone(),
+            vars: vars.to_vec(),
+            rule: rule.to_vec(),
         }
     }
 
@@ -58,6 +58,7 @@ impl Nonogram {
 
         // Base case.
         if pos == trial.len() || cache.contains_key(&key) {
+            #[allow(clippy::if_same_then_else)]
             if pos == trial.len() && rule_idx != self.rule.len() {
                 return AutoFillResult::Conflict;
             } else if let Some(&AutoFillResult::Conflict) = cache.get(&key) {
@@ -65,7 +66,7 @@ impl Nonogram {
             }
 
             for (a, t) in accum[0..pos].iter_mut().zip(trial) {
-                *a = *a | *t;
+                *a |= *t;
             }
 
             if accum
@@ -118,7 +119,7 @@ impl Nonogram {
                 } else if trial[pos] >= FLAG_UNKNOWN {
                     trial[pos] = FLAG_UNKNOWN | FLAG_ON;
                 }
-                pos = pos + 1;
+                pos += 1;
             }
 
             if ok && pos < trial.len() {
@@ -126,7 +127,7 @@ impl Nonogram {
                     ok = false;
                 } else if trial[pos] >= FLAG_UNKNOWN {
                     trial[pos] = FLAG_UNKNOWN | FLAG_OFF;
-                    pos = pos + 1;
+                    pos += 1;
                 }
             }
 
@@ -151,7 +152,7 @@ impl Constraint for Nonogram {
 
     fn on_updated(&self, search: &mut PuzzleSearch) -> PsResult<()> {
         let mut trial = vec![0; self.vars.len()];
-        for (mut pos, &var) in trial.iter_mut().zip(&self.vars) {
+        for (pos, &var) in trial.iter_mut().zip(&self.vars) {
             *pos = match search.get_assigned(var) {
                 Some(0) => FLAG_OFF,
                 Some(1) => FLAG_ON,
@@ -162,14 +163,14 @@ impl Constraint for Nonogram {
         let mut accum = trial.clone();
         let mut cache = HashMap::new();
         match self.autofill(&mut trial, 0, 0, &mut accum, &mut cache) {
-            AutoFillResult::Conflict => return Err(()),
+            AutoFillResult::Conflict => return Err(Error::Default),
             AutoFillResult::SearchEnded => (),
             AutoFillResult::SolutionFound => {
-                for idx in 0..self.vars.len() {
+                for (idx, var) in self.vars.iter().copied().enumerate() {
                     if accum[idx] == FLAG_UNKNOWN | FLAG_OFF {
-                        r#try!(search.set_candidate(self.vars[idx], 0));
+                        search.set_candidate(var, 0)?;
                     } else if accum[idx] == FLAG_UNKNOWN | FLAG_ON {
-                        r#try!(search.set_candidate(self.vars[idx], 1));
+                        search.set_candidate(var, 1)?;
                     }
                 }
             }
@@ -195,16 +196,14 @@ fn make_nonogram(rows: &[Vec<usize>], cols: &[Vec<usize>]) -> (Puzzle, Vec<Vec<V
     }
 
     for x in 0..w {
-        sys.add_constraint(Nonogram::new(
-            &vars.iter().map(|row| row[x]).collect(),
-            &cols[x],
-        ));
+        let tmp: Vec<_> = vars.iter().map(|row| row[x]).collect();
+        sys.add_constraint(Nonogram::new(&tmp, &cols[x]));
     }
 
     (sys, vars)
 }
 
-fn print_nonogram(dict: &Solution, vars: &Vec<Vec<VarToken>>) {
+fn print_nonogram(dict: &Solution, vars: &[Vec<VarToken>]) {
     for row in vars.iter() {
         for &var in row.iter() {
             print!("{}", if dict[var] == 1 { "*" } else { "." });
@@ -213,7 +212,7 @@ fn print_nonogram(dict: &Solution, vars: &Vec<Vec<VarToken>>) {
     }
 }
 
-fn verify_nonogram(dict: &Solution, vars: &Vec<Vec<VarToken>>, expected: &Board) {
+fn verify_nonogram(dict: &Solution, vars: &[Vec<VarToken>], expected: &Board) {
     for y in 0..HEIGHT {
         for x in 0..WIDTH {
             assert_eq!(dict[vars[y][x]], expected[y][x]);

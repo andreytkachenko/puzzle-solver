@@ -48,6 +48,7 @@ fn make_samurai_sudoku(board: &Board) -> (Puzzle, SamuraiVars) {
     let br = make_sudoku(&mut sys);
     let mid = make_sudoku(&mut sys);
 
+    #[allow(clippy::erasing_op)]
     for y in 0..SQRT_SIZE {
         for x in 0..SQRT_SIZE {
             sys.unify(
@@ -92,13 +93,13 @@ fn make_samurai_sudoku(board: &Board) -> (Puzzle, SamuraiVars) {
 
 fn print_samurai_sudoku(dict: &Solution, vars: &SamuraiVars) {
     let &(ref tl, ref tr, ref bl, ref br, ref mid) = vars;
-    let pr3 = |a: &[VarToken], j| print!(" {}{}{}", dict[a[j]], dict[a[j + 1]], dict[a[j + 2]]);
+    let pr3 = |a: &[VarToken], j| print!(" {} {} {} ", dict[a[j]], dict[a[j + 1]], dict[a[j + 2]]);
     let pr9 = |a| {
         pr3(a, 0);
         pr3(a, 3);
         pr3(a, 6);
     };
-    let gap = || print!("    ");
+    let gap = || print!("       ");
 
     for i in 0..SIZE {
         pr9(&tl[i]);

@@ -14,7 +14,7 @@ fn make_sujiko(board: &Board, tl: Val, tr: Val, bl: Val, br: Val) -> (Puzzle, Ve
     let mut sys = Puzzle::new();
     let vars = sys.new_vars_with_candidates_2d(3, 3, &[1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
-    sys.all_different(vars.iter().flat_map(|it| it));
+    sys.all_different(vars.iter().flatten());
 
     sys.equals(tl, vars[0][0] + vars[0][1] + vars[1][0] + vars[1][1]);
     sys.equals(tr, vars[0][1] + vars[0][2] + vars[1][1] + vars[1][2]);
@@ -38,7 +38,7 @@ fn make_sujiko(board: &Board, tl: Val, tr: Val, bl: Val, br: Val) -> (Puzzle, Ve
     (sys, vars)
 }
 
-fn print_sujiko(dict: &Solution, vars: &Vec<Vec<VarToken>>) {
+fn print_sujiko(dict: &Solution, vars: &[Vec<VarToken>]) {
     for y in 0..SIZE {
         for x in 0..SIZE {
             print!(" {}", dict[vars[y][x]]);
@@ -47,7 +47,7 @@ fn print_sujiko(dict: &Solution, vars: &Vec<Vec<VarToken>>) {
     }
 }
 
-fn verify_sujiko(dict: &Solution, vars: &Vec<Vec<VarToken>>, expected: &Board) {
+fn verify_sujiko(dict: &Solution, vars: &[Vec<VarToken>], expected: &Board) {
     for y in 0..SIZE {
         for x in 0..SIZE {
             assert_eq!(dict[vars[y][x]], expected[y][x]);

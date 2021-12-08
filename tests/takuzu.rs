@@ -27,8 +27,8 @@ impl Constraint for BinaryRepr {
         if var == self.value {
             let mut val = val;
             for &var in self.bits.iter() {
-                r#try!(search.set_candidate(var, val & 1));
-                val = val >> 1;
+                search.set_candidate(var, val & 1)?;
+                val >>= 1;
             }
         } else if let Some(bitpos) = self.bits.iter().position(|&v| v == var) {
             let bit = 1 << bitpos;
@@ -38,7 +38,7 @@ impl Constraint for BinaryRepr {
                 .collect::<Vec<_>>();
 
             for c in discard.into_iter() {
-                r#try!(search.remove_candidate(self.value, c));
+                search.remove_candidate(self.value, c)?;
             }
         }
 
@@ -72,7 +72,7 @@ fn make_sums(size: usize) -> Vec<Val> {
     vec
 }
 
-fn make_takuzu(puzzle: &Vec<Vec<Val>>) -> (Puzzle, Vec<Vec<VarToken>>) {
+fn make_takuzu(puzzle: &[Vec<Val>]) -> (Puzzle, Vec<Vec<VarToken>>) {
     let height = puzzle.len();
     assert!(height > 0 && height % 2 == 0);
     let width = puzzle[0].len();
@@ -142,7 +142,7 @@ fn make_takuzu(puzzle: &Vec<Vec<Val>>) -> (Puzzle, Vec<Vec<VarToken>>) {
     (sys, vars)
 }
 
-fn print_takuzu(dict: &Solution, vars: &Vec<Vec<VarToken>>) {
+fn print_takuzu(dict: &Solution, vars: &[Vec<VarToken>]) {
     for row in vars.iter() {
         let sum = row.iter().fold(0, |sum, &var| 2 * sum + dict[var]);
         for &var in row.iter() {
@@ -152,7 +152,7 @@ fn print_takuzu(dict: &Solution, vars: &Vec<Vec<VarToken>>) {
     }
 }
 
-fn verify_takuzu(dict: &Solution, vars: &Vec<Vec<VarToken>>, expected: &[Val]) {
+fn verify_takuzu(dict: &Solution, vars: &[Vec<VarToken>], expected: &[Val]) {
     for (row, &expected) in vars.iter().zip(expected) {
         let sum = row.iter().fold(0, |sum, &var| 2 * sum + dict[var]);
         assert_eq!(sum, expected);
@@ -196,18 +196,18 @@ fn takuzu_grid2() {
     ];
 
     let expected = [
-        0b_010101101001,
-        0b_010101001011,
-        0b_101010110100,
-        0b_100100110011,
-        0b_011011001100,
-        0b_010010110011,
-        0b_101100101010,
-        0b_001101001101,
-        0b_110010010110,
-        0b_010101101010,
-        0b_101010010101,
-        0b_101011010100,
+        0b_0101_0110_1001,
+        0b_0101_0100_1011,
+        0b_1010_1011_0100,
+        0b_1001_0011_0011,
+        0b_0110_1100_1100,
+        0b_0100_1011_0011,
+        0b_1011_0010_1010,
+        0b_0011_0100_1101,
+        0b_1100_1001_0110,
+        0b_0101_0110_1010,
+        0b_1010_1001_0101,
+        0b_1010_1101_0100,
     ];
 
     let (mut sys, vars) = make_takuzu(&puzzle);
@@ -235,18 +235,18 @@ fn takuzu_grid3() {
     ];
 
     let expected = [
-        0b_101010011001,
-        0b_110010010011,
-        0b_001101101100,
-        0b_101101001010,
-        0b_010010110011,
-        0b_010010110101,
-        0b_101101001100,
-        0b_101101010010,
-        0b_010010101101,
-        0b_011001011001,
-        0b_100110100110,
-        0b_010101100110,
+        0b_1010_1001_1001,
+        0b_1100_1001_0011,
+        0b_0011_0110_1100,
+        0b_1011_0100_1010,
+        0b_0100_1011_0011,
+        0b_0100_1011_0101,
+        0b_1011_0100_1100,
+        0b_1011_0101_0010,
+        0b_0100_1010_1101,
+        0b_0110_0101_1001,
+        0b_1001_1010_0110,
+        0b_0101_0110_0110,
     ];
 
     let (mut sys, vars) = make_takuzu(&puzzle);
@@ -274,7 +274,7 @@ fn takuzu_grid4() {
     ];
 
     let (mut sys, vars) = make_takuzu(&puzzle);
-    let dict = &sys.solve_any().expect("solution");
+    let dict = sys.solve_any().expect("solution");
     print_takuzu(&dict, &vars);
     println!("takuzu_grid4: {} guesses", sys.num_guesses());
 }

@@ -41,7 +41,7 @@ fn make_killer_sudoku(board: &[(Val, Vec<Point>)]) -> (Puzzle, Vec<Vec<VarToken>
     (sys, vars)
 }
 
-fn print_sudoku(dict: &Solution, vars: &Vec<Vec<VarToken>>) {
+fn print_sudoku(dict: &Solution, vars: &[Vec<VarToken>]) {
     for y in 0..SIZE {
         if y % SQRT_SIZE == 0 {
             println!();
@@ -49,7 +49,7 @@ fn print_sudoku(dict: &Solution, vars: &Vec<Vec<VarToken>>) {
 
         for x in 0..SIZE {
             print!(
-                "{}{}",
+                "{} {}",
                 if x % SQRT_SIZE == 0 { " " } else { "" },
                 dict[vars[y][x]]
             );
@@ -58,7 +58,7 @@ fn print_sudoku(dict: &Solution, vars: &Vec<Vec<VarToken>>) {
     }
 }
 
-fn verify_sudoku(dict: &Solution, vars: &Vec<Vec<VarToken>>, expected: &Board) {
+fn verify_sudoku(dict: &Solution, vars: &[Vec<VarToken>], expected: &Board) {
     for y in 0..SIZE {
         for x in 0..SIZE {
             assert_eq!(dict[vars[y][x]], expected[y][x]);

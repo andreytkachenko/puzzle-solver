@@ -25,7 +25,7 @@ fn make_send_more_money() -> (Puzzle, Vec<VarToken>) {
     (sys, vars)
 }
 
-fn print_send_more_money(dict: &Solution, vars: &Vec<VarToken>) {
+fn print_send_more_money(dict: &Solution, vars: &[VarToken]) {
     let (s, e, n, d) = (vars[0], vars[1], vars[2], vars[3]);
     let (m, o, r, y) = (vars[4], vars[5], vars[6], vars[7]);
 
@@ -38,7 +38,7 @@ fn print_send_more_money(dict: &Solution, vars: &Vec<VarToken>) {
     );
 }
 
-fn verify_send_more_money(dict: &Solution, vars: &Vec<VarToken>) {
+fn verify_send_more_money(dict: &Solution, vars: &[VarToken]) {
     let (s, e, n, d) = (vars[0], vars[1], vars[2], vars[3]);
     let (m, o, r, y) = (vars[4], vars[5], vars[6], vars[7]);
 

@@ -12,10 +12,15 @@ keywords = ["constraint", "finite", "domain", "puzzle", "sudoku"]
 categories = ["science"]
 edition = "2021"
 
+[[bin]]
+name = "run"
+path = "./bin/run.rs"
+
 [dependencies]
 bit-set = "0.4"
 num-rational = { version = "0.1", default-features = false }
 num-traits = "0.1"
+thiserror = "1.0.30"
 
 [badges]
 travis-ci = { repository = "wangds/puzzle-solver" }

@@ -20,7 +20,7 @@ fn make_hidato(board: &Board) -> (Puzzle, Vec<VarToken>) {
         for x in 0..WIDTH {
             if board[y][x] != NA {
                 pos.push((WIDTH * y + x) as Val);
-                count = count + 1;
+                count += 1;
             }
         }
     }
@@ -58,7 +58,7 @@ fn make_hidato(board: &Board) -> (Puzzle, Vec<VarToken>) {
     (sys, vars)
 }
 
-fn print_hidato(dict: &Solution, vars: &Vec<VarToken>) {
+fn print_hidato(dict: &Solution, vars: &[VarToken]) {
     let mut board = [[NA; WIDTH]; HEIGHT];
 
     for (idx, &var) in vars.iter().enumerate() {
@@ -79,7 +79,7 @@ fn print_hidato(dict: &Solution, vars: &Vec<VarToken>) {
     }
 }
 
-fn verify_hidato(dict: &Solution, vars: &Vec<VarToken>, expected: &Board) {
+fn verify_hidato(dict: &Solution, vars: &[VarToken], expected: &Board) {
     for (idx, &var) in vars.iter().enumerate() {
         let x = (dict[var] as usize) % WIDTH;
         let y = (dict[var] as usize) / WIDTH;

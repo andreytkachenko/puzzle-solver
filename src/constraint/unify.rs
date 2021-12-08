@@ -26,8 +26,8 @@ impl Unify {
     /// ```
     pub fn new(var1: VarToken, var2: VarToken) -> Self {
         Unify {
-            var1: var1,
-            var2: var2,
+            var1,
+            var2,
         }
     }
 }
@@ -53,8 +53,8 @@ impl Constraint for Unify {
         let var1 = if self.var1 == from { to } else { self.var1 };
         let var2 = if self.var2 == from { to } else { self.var2 };
         Ok(Rc::new(Unify {
-            var1: var1,
-            var2: var2,
+            var1,
+            var2,
         }))
     }
 }

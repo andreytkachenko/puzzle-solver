@@ -26,8 +26,8 @@ impl Constraint for NoDiagonal {
             if !search.is_assigned(var2) {
                 let x1 = val;
                 let dy = (y1 as Val) - (y2 as Val);
-                r#try!(search.remove_candidate(var2, x1 - dy));
-                r#try!(search.remove_candidate(var2, x1 + dy));
+                search.remove_candidate(var2, x1 - dy)?;
+                search.remove_candidate(var2, x1 + dy)?;
             }
         }
 
@@ -49,7 +49,7 @@ fn make_queens(n: usize) -> (Puzzle, Vec<VarToken>) {
     (sys, vars)
 }
 
-fn print_queens(dict: &Solution, vars: &Vec<VarToken>) {
+fn print_queens(dict: &Solution, vars: &[VarToken]) {
     let n = vars.len() as Val;
     for &var in vars.iter() {
         for i in 0..n {

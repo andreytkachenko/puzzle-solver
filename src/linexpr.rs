@@ -73,7 +73,7 @@ impl From<VarToken> for LinExpr {
 
         LinExpr {
             constant: Ratio::zero(),
-            coef: coef,
+            coef,
         }
     }
 }
@@ -141,7 +141,7 @@ impl Neg for LinExpr {
 impl<T: IntoCoef> Add<T> for LinExpr {
     type Output = LinExpr;
     fn add(mut self, rhs: T) -> Self::Output {
-        self.constant = self.constant + rhs.into_coef();
+        self.constant += rhs.into_coef();
         self
     }
 }
@@ -163,9 +163,9 @@ impl<T: IntoCoef> Mul<T> for LinExpr {
         } else {
             let rhs = rhs.into_coef();
             if rhs != Ratio::one() {
-                self.constant = self.constant * rhs;
+                self.constant *= rhs;
                 for coef in self.coef.values_mut() {
-                    *coef = *coef * rhs;
+                    *coef *= rhs;
                 }
             }
         }
@@ -200,7 +200,7 @@ impl_subtract_op!(VarToken - LinExpr);
 impl Add for LinExpr {
     type Output = LinExpr;
     fn add(mut self, mut rhs: LinExpr) -> Self::Output {
-        self.constant = self.constant + rhs.constant;
+        self.constant += rhs.constant;
 
         for (x2, a2) in rhs.coef.drain() {
             match self.coef.entry(x2) {
@@ -232,6 +232,7 @@ mod tests {
     use num_rational::Ratio;
 
     #[test]
+    #[allow(clippy::identity_op, clippy::eq_op)]
     fn test_ops() {
         let mut puzzle = Puzzle::new();
         let x = puzzle.new_var();
@@ -289,6 +290,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::erasing_op, clippy::eq_op)]
     fn test_coef_zero() {
         let mut puzzle = Puzzle::new();
         let x = puzzle.new_var();

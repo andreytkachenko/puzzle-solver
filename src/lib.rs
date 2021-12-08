@@ -1,17 +1,20 @@
 //! This crate searches for the solutions to logic puzzles.
 //! The puzzle rules are expressed as constraints.
 
-extern crate bit_set;
-extern crate num_rational;
-extern crate num_traits;
+pub mod constraint;
+
+mod error;
+mod linexpr;
+mod puzzle;
 
 use num_rational::Rational32;
 use std::collections::HashMap;
 use std::ops;
 
-pub use crate::constraint::Constraint;
-pub use crate::puzzle::Puzzle;
-pub use crate::puzzle::PuzzleSearch;
+pub use constraint::Constraint;
+pub use error::Error;
+pub use puzzle::Puzzle;
+pub use puzzle::PuzzleSearch;
 
 /// A puzzle variable token.
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
@@ -39,18 +42,13 @@ pub struct LinExpr {
 }
 
 /// A result during a puzzle solution search (Err = contradiction).
-pub type PsResult<T> = Result<T, ()>;
+pub type PsResult<T> = Result<T, Error>;
 
 /// A dictionary mapping puzzle variables to the solution value.
 #[derive(Debug)]
 pub struct Solution {
     vars: Vec<Val>,
 }
-
-pub mod constraint;
-
-mod linexpr;
-mod puzzle;
 
 impl ops::Index<VarToken> for Solution {
     type Output = Val;

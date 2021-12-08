@@ -16,7 +16,7 @@ fn make_magic_square(n: usize) -> (Puzzle, Vec<Vec<VarToken>>, VarToken) {
     let max = digits.iter().rev().take(n).sum();
     let total = sys.new_var_with_candidates(&(min..max).collect::<Vec<Val>>());
 
-    sys.all_different(vars.iter().flat_map(|it| it));
+    sys.all_different(vars.iter().flatten());
 
     for y in 0..n {
         sys.equals(
@@ -49,7 +49,7 @@ fn make_magic_square(n: usize) -> (Puzzle, Vec<Vec<VarToken>>, VarToken) {
     (sys, vars, total)
 }
 
-fn print_magic_square(dict: &Solution, vars: &Vec<Vec<VarToken>>) {
+fn print_magic_square(dict: &Solution, vars: &[Vec<VarToken>]) {
     for row in vars.iter() {
         for &var in row.iter() {
             print!(" {:2}", dict[var]);

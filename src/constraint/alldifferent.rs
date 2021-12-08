@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use crate::{Constraint, PsResult, PuzzleSearch, Val, VarToken};
+use crate::{Constraint, Error, PsResult, PuzzleSearch, Val, VarToken};
 
 pub struct AllDifferent {
     vars: Vec<VarToken>,
@@ -38,7 +38,7 @@ impl Constraint for AllDifferent {
 
     fn on_assigned(&self, search: &mut PuzzleSearch, var: VarToken, val: Val) -> PsResult<()> {
         for &var2 in self.vars.iter().filter(|&v| *v != var) {
-            r#try!(search.remove_candidate(var2, val));
+            search.remove_candidate(var2, val)?;
         }
 
         Ok(())
@@ -50,25 +50,30 @@ impl Constraint for AllDifferent {
         let mut all_candidates = HashMap::new();
 
         for &var in self.vars.iter().filter(|&var| !search.is_assigned(*var)) {
-            num_unassigned = num_unassigned + 1;
+            num_unassigned += 1;
 
             for val in search.get_unassigned(var) {
-                if all_candidates.contains_key(&val) {
-                    all_candidates.insert(val, None);
-                } else {
-                    all_candidates.insert(val, Some(var));
+                match all_candidates.entry(val) {
+                    std::collections::hash_map::Entry::Occupied(mut e) => {
+                        e.insert(None);
+                    }
+                    std::collections::hash_map::Entry::Vacant(e) => {
+                        e.insert(Some(var));
+                    }
                 }
             }
         }
 
         if num_unassigned > all_candidates.len() {
             // More unassigned variables than candidates, contradiction.
-            return Err(());
-        } else if num_unassigned == all_candidates.len() {
+            return Err(Error::Default);
+        }
+
+        if num_unassigned == all_candidates.len() {
             // As many as variables as candidates.
             for (&val, &opt) in all_candidates.iter() {
                 if let Some(var) = opt {
-                    r#try!(search.set_candidate(var, val));
+                    search.set_candidate(var, val)?;
                 }
             }
         }
@@ -85,7 +90,7 @@ impl Constraint for AllDifferent {
             }
         }
 
-        Err(())
+        Err(Error::Default)
     }
 }
 
