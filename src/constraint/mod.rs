@@ -5,14 +5,15 @@
 //! cannot store additional information about the state (e.g. caches)
 //! in the constraint to reuse later.
 
+use std::fmt::Debug;
 use std::rc::Rc;
 
 use crate::{PsResult, PuzzleSearch, Val, VarToken};
 
 /// Constraint trait.
-pub trait Constraint {
+pub trait Constraint: Debug {
     /// An iterator over the variables that are involved in the constraint.
-    fn vars<'a>(&'a self) -> Box<dyn Iterator<Item = &'a VarToken> + 'a>;
+    fn vars(&self) -> Box<dyn Iterator<Item = &'_ VarToken> + '_>;
 
     /// Applied after a variable has been assigned.
     fn on_assigned(&self, _search: &mut PuzzleSearch, _var: VarToken, _val: Val) -> PsResult<()> {

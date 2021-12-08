@@ -1,10 +1,11 @@
 //! All different implementation.
 
-use std::collections::HashMap;
+use std::collections::{hash_map::Entry, HashMap};
 use std::rc::Rc;
 
 use crate::{Constraint, Error, PsResult, PuzzleSearch, Val, VarToken};
 
+#[derive(Debug)]
 pub struct AllDifferent {
     vars: Vec<VarToken>,
 }
@@ -32,7 +33,7 @@ impl AllDifferent {
 }
 
 impl Constraint for AllDifferent {
-    fn vars<'a>(&'a self) -> Box<dyn Iterator<Item = &'a VarToken> + 'a> {
+    fn vars(&self) -> Box<dyn Iterator<Item = &'_ VarToken> + '_> {
         Box::new(self.vars.iter())
     }
 
@@ -54,10 +55,11 @@ impl Constraint for AllDifferent {
 
             for val in search.get_unassigned(var) {
                 match all_candidates.entry(val) {
-                    std::collections::hash_map::Entry::Occupied(mut e) => {
+                    Entry::Occupied(mut e) => {
                         e.insert(None);
                     }
-                    std::collections::hash_map::Entry::Vacant(e) => {
+
+                    Entry::Vacant(e) => {
                         e.insert(Some(var));
                     }
                 }

@@ -60,8 +60,8 @@ fn make_sums(size: usize) -> Vec<Val> {
         let mut v = val as usize;
 
         while v > 0 {
-            count = count + (v & 1);
-            v = v >> 1;
+            count += (v & 1);
+            v >>= 1;
         }
 
         if count == size / 2 {

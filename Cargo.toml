@@ -20,6 +20,7 @@ path = "./bin/run.rs"
 bit-set = "0.4"
 num-rational = { version = "0.1", default-features = false }
 num-traits = "0.1"
+ranges = "0.3.3"
 thiserror = "1.0.30"
 
 [badges]

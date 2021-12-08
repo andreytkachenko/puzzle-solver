@@ -6,6 +6,7 @@ use std::rc::Rc;
 
 use crate::{Constraint, Error, LinExpr, PsResult, PuzzleSearch, Val, VarToken};
 
+#[derive(Debug)]
 pub struct Equality {
     // The equation: 0 = constant + coef1 * var1 + coef2 * var2 + ...
     eqn: LinExpr,
@@ -30,11 +31,11 @@ impl Equality {
 }
 
 impl Constraint for Equality {
-    fn vars<'a>(&'a self) -> Box<dyn Iterator<Item = &'a VarToken> + 'a> {
+    fn vars(&self) -> Box<dyn Iterator<Item = &'_ VarToken> + '_> {
         Box::new(self.eqn.coef.keys())
     }
 
-    fn on_assigned(&self, search: &mut PuzzleSearch, _: VarToken, _: Val) -> PsResult<()> {
+    fn on_assigned(&self, search: &mut PuzzleSearch, _var: VarToken, _val: Val) -> PsResult<()> {
         let mut sum = self.eqn.constant;
         let mut unassigned_var = None;
 
@@ -101,23 +102,25 @@ impl Constraint for Equality {
             }
 
             let (min_val, max_val) = search.get_min_max(var)?;
-            let (min_bnd, max_bnd);
-
-            if coef > Ratio::zero() {
-                min_bnd = ((coef * Ratio::from_integer(max_val) - sum_max) / coef)
-                    .ceil()
-                    .to_integer();
-                max_bnd = ((coef * Ratio::from_integer(min_val) - sum_min) / coef)
-                    .floor()
-                    .to_integer();
+            let (min_bnd, max_bnd) = if coef > Ratio::zero() {
+                (
+                    ((coef * Ratio::from_integer(max_val) - sum_max) / coef)
+                        .ceil()
+                        .to_integer(),
+                    ((coef * Ratio::from_integer(min_val) - sum_min) / coef)
+                        .floor()
+                        .to_integer(),
+                )
             } else {
-                min_bnd = ((coef * Ratio::from_integer(max_val) - sum_min) / coef)
-                    .ceil()
-                    .to_integer();
-                max_bnd = ((coef * Ratio::from_integer(min_val) - sum_max) / coef)
-                    .floor()
-                    .to_integer();
-            }
+                (
+                    ((coef * Ratio::from_integer(max_val) - sum_min) / coef)
+                        .ceil()
+                        .to_integer(),
+                    ((coef * Ratio::from_integer(min_val) - sum_max) / coef)
+                        .floor()
+                        .to_integer(),
+                )
+            };
 
             if min_val < min_bnd || max_bnd < max_val {
                 let (new_min, new_max) = search.bound_candidate_range(var, min_bnd, max_bnd)?;

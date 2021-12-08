@@ -1,17 +1,22 @@
 //! The puzzle's state and rules.
 
 use bit_set::BitSet;
+use ranges::GenericRange;
 use std::cell::Cell;
 use std::collections::BTreeSet;
 use std::fmt;
 use std::iter;
 use std::mem;
 use std::ops;
+use std::ops::Bound;
+use std::ops::RangeBounds;
 use std::rc::Rc;
 
 use crate::constraint;
 use crate::Error;
 use crate::{Constraint, LinExpr, PsResult, Solution, Val, VarToken};
+
+use ranges::Ranges;
 
 /// A collection of candidates.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -19,6 +24,7 @@ enum Candidates {
     None,                   // A variable with no candidates.
     Value(Val),             // A variable set to its initial value.
     Set(Rc<BTreeSet<Val>>), // A variable with a list of candidates.
+    Range(Ranges<Val>),     // A variable with candidate ranges.
 }
 
 /// The state of a variable during the solution search.
@@ -75,15 +81,38 @@ impl Candidates {
             Candidates::None => 0,
             Candidates::Value(_) => 1,
             Candidates::Set(ref rc) => rc.len(),
+            Candidates::Range(r) => {
+                let mut total = 0;
+
+                for i in r.as_slice() {
+                    let min = match i.start_bound() {
+                        Bound::Included(val) => *val,
+                        Bound::Excluded(val) => val + 1,
+                        Bound::Unbounded => unreachable!(),
+                    };
+
+                    let max = match i.end_bound() {
+                        Bound::Included(val) => *val,
+                        Bound::Excluded(val) => val - 1,
+                        Bound::Unbounded => unreachable!(),
+                    };
+
+                    total += max - min + 1;
+                }
+                total as _
+            }
         }
     }
 
     /// Get an iterator over all of the candidates of a variable.
-    fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = Val> + 'a> {
+    fn iter(&self) -> Box<dyn Iterator<Item = Val> + '_> {
         match self {
             Candidates::None => Box::new(iter::empty()),
             Candidates::Value(val) => Box::new(iter::once(*val)),
             Candidates::Set(ref rc) => Box::new(rc.iter().cloned()),
+            Candidates::Range(range) => {
+                Box::new(range.as_slice().iter().map(|x| x.into_iter()).flatten())
+            }
         }
     }
 }
@@ -138,6 +167,21 @@ impl Puzzle {
         var
     }
 
+    /// Allocate a new puzzle variable, initialising it with potential
+    /// candidates.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut send_more_money = puzzle_solver::Puzzle::new();
+    /// send_more_money.new_var_with_candidates(&[0,1,2,3,4,5,6,7,8,9]);
+    /// ```
+    pub fn new_var_with_range<R: RangeBounds<Val>>(&mut self, range: R) -> VarToken {
+        let var = self.new_var();
+        self.insert_range(var, range);
+        var
+    }
+
     /// Allocate a 1d vector of puzzle variables, each initialised to
     /// have the same set of potential candidates.
     ///
@@ -151,6 +195,27 @@ impl Puzzle {
         let mut vars = Vec::with_capacity(n);
         for _ in 0..n {
             vars.push(self.new_var_with_candidates(candidates));
+        }
+        vars
+    }
+
+    /// Allocate a 1d vector of puzzle variables, each initialised to
+    /// have the same set of potential candidates.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut send_more_money = puzzle_solver::Puzzle::new();
+    /// send_more_money.new_vars_with_candidates_1d(8, &[0,1,2,3,4,5,6,7,8,9]);
+    /// ```
+    pub fn new_vars_with_range_1d<R: RangeBounds<Val> + Clone>(
+        &mut self,
+        n: usize,
+        range: R,
+    ) -> Vec<VarToken> {
+        let mut vars = Vec::with_capacity(n);
+        for _ in 0..n {
+            vars.push(self.new_var_with_range(range.clone()));
         }
         vars
     }
@@ -173,6 +238,28 @@ impl Puzzle {
         let mut vars = Vec::with_capacity(height);
         for _ in 0..height {
             vars.push(self.new_vars_with_candidates_1d(width, candidates));
+        }
+        vars
+    }
+
+    /// Allocate a 2d array of puzzle variables, each initialised to
+    /// have the same set of potential candidates.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut magic_square = puzzle_solver::Puzzle::new();
+    /// magic_square.new_vars_with_candidates_2d(3, 3, &[1,2,3,4,5,6,7,8,9]);
+    /// ```
+    pub fn new_vars_with_range_2d<R: RangeBounds<Val> + Clone>(
+        self: &mut Puzzle,
+        width: usize,
+        height: usize,
+        range: R,
+    ) -> Vec<Vec<VarToken>> {
+        let mut vars = Vec::with_capacity(height);
+        for _ in 0..height {
+            vars.push(self.new_vars_with_range_1d(width, range.clone()));
         }
         vars
     }
@@ -220,6 +307,7 @@ impl Puzzle {
 
         match self.candidates[idx] {
             Candidates::Value(_) => panic!("attempt to set fixed variable"),
+            Candidates::Range(_) => panic!("attempt to insert candidates into range"),
 
             Candidates::None => {
                 self.candidates[idx] = Candidates::Set(Rc::new(BTreeSet::new()));
@@ -252,10 +340,9 @@ impl Puzzle {
         let VarToken(idx) = var;
 
         match self.candidates[idx] {
-            Candidates::Value(_) => panic!("attempt to set fixed variable"),
-
             Candidates::None => (),
-
+            Candidates::Value(_) => panic!("attempt to set fixed variable"),
+            Candidates::Range(_) => panic!("attempt to remove candidates from range"),
             Candidates::Set(ref mut rc) => {
                 let cs = Rc::get_mut(rc).expect("unique");
                 for c in candidates.iter() {
@@ -282,16 +369,40 @@ impl Puzzle {
         let VarToken(idx) = var;
 
         match self.candidates[idx] {
-            Candidates::Value(_) => panic!("attempt to set fixed variable"),
-
             Candidates::None => (),
-
+            Candidates::Value(_) => panic!("attempt to set fixed variable"),
+            Candidates::Range(_) => panic!("attempt to intersect candidates on the range"),
             Candidates::Set(ref mut rc) => {
                 let cs = Rc::get_mut(rc).expect("unique");
                 let mut set = BTreeSet::new();
                 set.extend(candidates);
                 *cs = cs.intersection(&set).cloned().collect();
             }
+        }
+    }
+
+    ///
+    /// Insert range
+    ///
+    ///
+    pub fn insert_range<R: RangeBounds<Val>>(&mut self, var: VarToken, range: R) {
+        let VarToken(idx) = var;
+
+        match self.candidates[idx] {
+            ref mut x @ Candidates::None => {
+                *x = Candidates::Range(Ranges::from((
+                    range.start_bound().cloned(),
+                    range.end_bound().cloned(),
+                )));
+            }
+            Candidates::Value(_) => panic!("attempt to set fixed variable"),
+            Candidates::Range(ref mut r) => {
+                r.insert(GenericRange::new_with_bounds(
+                    range.start_bound().cloned(),
+                    range.end_bound().cloned(),
+                ));
+            }
+            Candidates::Set(_) => panic!("attempt to insert range on set"),
         }
     }
 
@@ -570,6 +681,28 @@ impl<'a> PuzzleSearch<'a> {
             VarState::Unassigned(ref cs) => match cs {
                 Candidates::None => Err(Error::Default),
                 Candidates::Value(val) => Ok((*val, *val)),
+                Candidates::Range(r) => {
+                    let slice = r.as_slice();
+                    let first = slice.get(0).ok_or(Error::Default)?.start_bound();
+                    let last = slice
+                        .get(slice.len() - 1)
+                        .ok_or(Error::Default)?
+                        .end_bound();
+
+                    let min = match first {
+                        Bound::Included(val) => *val,
+                        Bound::Excluded(val) => val + 1,
+                        Bound::Unbounded => unreachable!(),
+                    };
+
+                    let max = match last {
+                        Bound::Included(val) => *val,
+                        Bound::Excluded(val) => val - 1,
+                        Bound::Unbounded => unreachable!(),
+                    };
+
+                    Ok((min, max))
+                }
                 Candidates::Set(ref rc) => rc
                     .iter()
                     .cloned()
@@ -587,30 +720,34 @@ impl<'a> PuzzleSearch<'a> {
     pub fn set_candidate(&mut self, var: VarToken, val: Val) -> PsResult<()> {
         let VarToken(idx) = var;
 
-        match &self.vars[idx] {
-            VarState::Assigned(v) => return bool_to_result(*v == val),
-            VarState::Unassigned(ref cs) => match cs {
-                Candidates::None => return Err(Error::Default),
-                Candidates::Value(v) => return bool_to_result(*v == val),
-                Candidates::Set(_) => (),
-            },
-            VarState::Unified(_) => (),
-        }
+        match self.vars[idx] {
+            VarState::Assigned(v) => bool_to_result(v == val),
+            VarState::Unassigned(ref mut cs) => match cs {
+                Candidates::None => Err(Error::Default),
+                Candidates::Value(v) => bool_to_result(*v == val),
+                Candidates::Range(ref mut r) => {
+                    if r.contains(&val) {
+                        *r = Ranges::from(val..=val);
+                        self.wake.union_with(&self.constraints.wake[idx]);
 
-        if let VarState::Unified(other) = self.vars[idx] {
-            self.set_candidate(other, val)
-        } else if let VarState::Unassigned(Candidates::Set(ref mut rc)) = self.vars[idx] {
-            if rc.contains(&val) {
-                let set = Rc::make_mut(rc);
-                set.clear();
-                set.insert(val);
-                self.wake.union_with(&self.constraints.wake[idx]);
-                Ok(())
-            } else {
-                Err(Error::Default)
-            }
-        } else {
-            unreachable!();
+                        Ok(())
+                    } else {
+                        Err(Error::Default)
+                    }
+                }
+                Candidates::Set(rc) => {
+                    if rc.contains(&val) {
+                        let set = Rc::make_mut(rc);
+                        set.clear();
+                        set.insert(val);
+                        self.wake.union_with(&self.constraints.wake[idx]);
+                        Ok(())
+                    } else {
+                        Err(Error::Default)
+                    }
+                }
+            },
+            VarState::Unified(other) => self.set_candidate(other, val),
         }
     }
 
@@ -618,27 +755,29 @@ impl<'a> PuzzleSearch<'a> {
     pub fn remove_candidate(&mut self, var: VarToken, val: Val) -> PsResult<()> {
         let VarToken(idx) = var;
 
-        match &self.vars[idx] {
-            VarState::Assigned(v) => return bool_to_result(*v != val),
-            VarState::Unassigned(ref cs) => match cs {
-                Candidates::None => return Err(Error::Default),
-                Candidates::Value(v) => return bool_to_result(*v != val),
-                Candidates::Set(_) => (),
-            },
-            VarState::Unified(_) => (),
-        }
+        match self.vars[idx] {
+            VarState::Assigned(v) => bool_to_result(v != val),
+            VarState::Unassigned(ref mut cs) => match cs {
+                Candidates::None => Err(Error::Default),
+                Candidates::Value(v) => bool_to_result(*v != val),
+                Candidates::Range(r) => {
+                    if r.contains(&val) {
+                        r.remove(val..=val);
+                        self.wake.union_with(&self.constraints.wake[idx]);
+                    }
 
-        if let VarState::Unified(other) = self.vars[idx] {
-            self.remove_candidate(other, val)
-        } else if let VarState::Unassigned(Candidates::Set(ref mut rc)) = self.vars[idx] {
-            if rc.contains(&val) {
-                let set = Rc::make_mut(rc);
-                set.remove(&val);
-                self.wake.union_with(&self.constraints.wake[idx]);
-            }
-            bool_to_result(!rc.is_empty())
-        } else {
-            unreachable!();
+                    bool_to_result(!r.is_empty())
+                }
+                Candidates::Set(rc) => {
+                    if rc.contains(&val) {
+                        let set = Rc::make_mut(rc);
+                        set.remove(&val);
+                        self.wake.union_with(&self.constraints.wake[idx]);
+                    }
+                    bool_to_result(!rc.is_empty())
+                }
+            },
+            VarState::Unified(other) => self.remove_candidate(other, val),
         }
     }
 
@@ -654,51 +793,77 @@ impl<'a> PuzzleSearch<'a> {
         match self.vars[idx] {
             VarState::Assigned(v) => {
                 if min <= v && v <= max {
-                    return Ok((v, v));
+                    Ok((v, v))
                 } else {
-                    return Err(Error::Default);
+                    Err(Error::Default)
                 }
             }
-            VarState::Unassigned(ref cs) => match cs {
-                Candidates::None => return Err(Error::Default),
+
+            VarState::Unassigned(ref mut cs) => match cs {
+                Candidates::None => Err(Error::Default),
                 Candidates::Value(v) => {
                     if min <= *v && *v <= max {
-                        return Ok((*v, *v));
+                        Ok((*v, *v))
                     } else {
-                        return Err(Error::Default);
+                        Err(Error::Default)
                     }
                 }
-                Candidates::Set(_) => (),
+                Candidates::Range(ref mut r) => {
+                    if max < min {
+                        return Err(Error::Default);
+                    }
+
+                    *r = r.clone().intersect(min..=max);
+
+                    self.wake.union_with(&self.constraints.wake[idx]);
+
+                    let slice = r.as_slice();
+                    let first = slice.get(0).ok_or(Error::Default)?.start_bound();
+                    let last = slice
+                        .get(slice.len() - 1)
+                        .ok_or(Error::Default)?
+                        .end_bound();
+
+                    let min = match first {
+                        Bound::Included(val) => *val,
+                        Bound::Excluded(val) => val + 1,
+                        Bound::Unbounded => unreachable!(),
+                    };
+
+                    let max = match last {
+                        Bound::Included(val) => *val,
+                        Bound::Excluded(val) => val - 1,
+                        Bound::Unbounded => unreachable!(),
+                    };
+
+                    Ok((min, max))
+                }
+                Candidates::Set(rc) => {
+                    let &curr_min = rc.iter().min().expect("candidates");
+                    let &curr_max = rc.iter().max().expect("candidates");
+
+                    if curr_min < min || max < curr_max {
+                        let set = Rc::make_mut(rc);
+                        *set = set
+                            .iter()
+                            .filter(|&val| min <= *val && *val <= max)
+                            .cloned()
+                            .collect();
+                        self.wake.union_with(&self.constraints.wake[idx]);
+                        rc.iter()
+                            .cloned()
+                            .min()
+                            .into_iter()
+                            .zip(rc.iter().cloned().max())
+                            .next()
+                            .ok_or(Error::Default)
+                    } else {
+                        Ok((curr_min, curr_max))
+                    }
+                }
             },
-            VarState::Unified(_) => (),
-        }
 
-        if let VarState::Unified(other) = self.vars[idx] {
-            self.bound_candidate_range(other, min, max)
-        } else if let VarState::Unassigned(Candidates::Set(ref mut rc)) = self.vars[idx] {
-            let &curr_min = rc.iter().min().expect("candidates");
-            let &curr_max = rc.iter().max().expect("candidates");
-
-            if curr_min < min || max < curr_max {
-                let set = Rc::make_mut(rc);
-                *set = set
-                    .iter()
-                    .filter(|&val| min <= *val && *val <= max)
-                    .cloned()
-                    .collect();
-                self.wake.union_with(&self.constraints.wake[idx]);
-                rc.iter()
-                    .cloned()
-                    .min()
-                    .into_iter()
-                    .zip(rc.iter().cloned().max())
-                    .next()
-                    .ok_or(Error::Default)
-            } else {
-                Ok((curr_min, curr_max))
-            }
-        } else {
-            unreachable!();
+            VarState::Unified(other) => self.bound_candidate_range(other, min, max),
         }
     }
 

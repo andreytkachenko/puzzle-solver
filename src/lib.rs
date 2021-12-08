@@ -7,7 +7,9 @@ mod error;
 mod linexpr;
 mod puzzle;
 
+use core::fmt;
 use num_rational::Rational32;
+use num_traits::Signed;
 use std::collections::HashMap;
 use std::ops;
 
@@ -39,6 +41,34 @@ pub struct LinExpr {
     // some manipulations, the coefficient is 0, then it must be
     // removed from the map.
     coef: HashMap<VarToken, Coef>,
+}
+
+impl fmt::Display for LinExpr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.constant)?;
+
+        for (tok, coef) in self.coef.iter() {
+            if coef.is_negative() {
+                if coef.abs() == Rational32::from_integer(1) {
+                    write!(f, " - x{}", tok.0)?;
+                } else {
+                    write!(f, " - {} * x{}", coef.abs(), tok.0)?;
+                }
+            } else if coef.abs() == Rational32::from_integer(1) {
+                write!(f, " + x{}", tok.0)?;
+            } else {
+                write!(f, " + {} * x{}", coef, tok.0)?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
+impl fmt::Debug for LinExpr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "LinExpr {{ {} }}", self)
+    }
 }
 
 /// A result during a puzzle solution search (Err = contradiction).
