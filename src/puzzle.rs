@@ -1,14 +1,12 @@
 //! The puzzle's state and rules.
 
 use bit_set::BitSet;
-use ranges::GenericRange;
 use std::cell::Cell;
 use std::collections::BTreeSet;
 use std::fmt;
 use std::iter;
 use std::mem;
 use std::ops;
-use std::ops::Bound;
 use std::ops::RangeBounds;
 use std::rc::Rc;
 
@@ -16,7 +14,7 @@ use crate::constraint;
 use crate::Error;
 use crate::{Constraint, LinExpr, PsResult, Solution, Val, VarToken};
 
-use ranges::Ranges;
+use crate::ranges::Ranges;
 
 /// A collection of candidates.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -24,7 +22,7 @@ enum Candidates {
     None,                   // A variable with no candidates.
     Value(Val),             // A variable set to its initial value.
     Set(Rc<BTreeSet<Val>>), // A variable with a list of candidates.
-    Range(Ranges<Val>),     // A variable with candidate ranges.
+    Range(Ranges),          // A variable with candidate ranges.
 }
 
 /// The state of a variable during the solution search.
@@ -81,26 +79,7 @@ impl Candidates {
             Candidates::None => 0,
             Candidates::Value(_) => 1,
             Candidates::Set(ref rc) => rc.len(),
-            Candidates::Range(r) => {
-                let mut total = 0;
-
-                for i in r.as_slice() {
-                    let min = match i.start_bound() {
-                        Bound::Included(val) => *val,
-                        Bound::Excluded(val) => val + 1,
-                        Bound::Unbounded => unreachable!(),
-                    };
-
-                    let max = match i.end_bound() {
-                        Bound::Included(val) => *val,
-                        Bound::Excluded(val) => val - 1,
-                        Bound::Unbounded => unreachable!(),
-                    };
-
-                    total += max - min + 1;
-                }
-                total as _
-            }
+            Candidates::Range(rc) => rc.len(),
         }
     }
 
@@ -110,9 +89,7 @@ impl Candidates {
             Candidates::None => Box::new(iter::empty()),
             Candidates::Value(val) => Box::new(iter::once(*val)),
             Candidates::Set(ref rc) => Box::new(rc.iter().cloned()),
-            Candidates::Range(range) => {
-                Box::new(range.as_slice().iter().map(|x| x.into_iter()).flatten())
-            }
+            Candidates::Range(range) => Box::new(range.iter()),
         }
     }
 }
@@ -390,17 +367,14 @@ impl Puzzle {
 
         match self.candidates[idx] {
             ref mut x @ Candidates::None => {
-                *x = Candidates::Range(Ranges::from((
-                    range.start_bound().cloned(),
-                    range.end_bound().cloned(),
-                )));
-            }
-            Candidates::Value(_) => panic!("attempt to set fixed variable"),
-            Candidates::Range(ref mut r) => {
-                r.insert(GenericRange::new_with_bounds(
+                *x = Candidates::Range(Ranges::new(
                     range.start_bound().cloned(),
                     range.end_bound().cloned(),
                 ));
+            }
+            Candidates::Value(_) => panic!("attempt to set fixed variable"),
+            Candidates::Range(ref mut r) => {
+                r.insert(range.start_bound().cloned(), range.end_bound().cloned());
             }
             Candidates::Set(_) => panic!("attempt to insert range on set"),
         }
@@ -664,7 +638,7 @@ impl<'a> PuzzleSearch<'a> {
     }
 
     /// Get an iterator over the candidates to an unassigned variable.
-    pub fn get_unassigned(&'a self, var: VarToken) -> Box<dyn Iterator<Item = Val> + 'a> {
+    pub fn get_unassigned(&self, var: VarToken) -> Box<dyn Iterator<Item = Val> + '_> {
         let VarToken(idx) = var;
         match &self.vars[idx] {
             VarState::Assigned(_) => Box::new(iter::empty()),
@@ -681,28 +655,7 @@ impl<'a> PuzzleSearch<'a> {
             VarState::Unassigned(ref cs) => match cs {
                 Candidates::None => Err(Error::Default),
                 Candidates::Value(val) => Ok((*val, *val)),
-                Candidates::Range(r) => {
-                    let slice = r.as_slice();
-                    let first = slice.get(0).ok_or(Error::Default)?.start_bound();
-                    let last = slice
-                        .get(slice.len() - 1)
-                        .ok_or(Error::Default)?
-                        .end_bound();
-
-                    let min = match first {
-                        Bound::Included(val) => *val,
-                        Bound::Excluded(val) => val + 1,
-                        Bound::Unbounded => unreachable!(),
-                    };
-
-                    let max = match last {
-                        Bound::Included(val) => *val,
-                        Bound::Excluded(val) => val - 1,
-                        Bound::Unbounded => unreachable!(),
-                    };
-
-                    Ok((min, max))
-                }
+                Candidates::Range(r) => r.get_bounds().ok_or(Error::Default),
                 Candidates::Set(ref rc) => rc
                     .iter()
                     .cloned()
@@ -726,8 +679,8 @@ impl<'a> PuzzleSearch<'a> {
                 Candidates::None => Err(Error::Default),
                 Candidates::Value(v) => bool_to_result(*v == val),
                 Candidates::Range(ref mut r) => {
-                    if r.contains(&val) {
-                        *r = Ranges::from(val..=val);
+                    if r.contains(val) {
+                        *r = (val..=val).into();
                         self.wake.union_with(&self.constraints.wake[idx]);
 
                         Ok(())
@@ -761,7 +714,7 @@ impl<'a> PuzzleSearch<'a> {
                 Candidates::None => Err(Error::Default),
                 Candidates::Value(v) => bool_to_result(*v != val),
                 Candidates::Range(r) => {
-                    if r.contains(&val) {
+                    if r.contains(val) {
                         r.remove(val..=val);
                         self.wake.union_with(&self.constraints.wake[idx]);
                     }
@@ -808,36 +761,19 @@ impl<'a> PuzzleSearch<'a> {
                         Err(Error::Default)
                     }
                 }
+
                 Candidates::Range(ref mut r) => {
                     if max < min {
                         return Err(Error::Default);
                     }
 
-                    *r = r.clone().intersect(min..=max);
+                    r.intersection(min..=max);
 
                     self.wake.union_with(&self.constraints.wake[idx]);
 
-                    let slice = r.as_slice();
-                    let first = slice.get(0).ok_or(Error::Default)?.start_bound();
-                    let last = slice
-                        .get(slice.len() - 1)
-                        .ok_or(Error::Default)?
-                        .end_bound();
-
-                    let min = match first {
-                        Bound::Included(val) => *val,
-                        Bound::Excluded(val) => val + 1,
-                        Bound::Unbounded => unreachable!(),
-                    };
-
-                    let max = match last {
-                        Bound::Included(val) => *val,
-                        Bound::Excluded(val) => val - 1,
-                        Bound::Unbounded => unreachable!(),
-                    };
-
-                    Ok((min, max))
+                    r.get_bounds().ok_or(Error::Default)
                 }
+
                 Candidates::Set(rc) => {
                     let &curr_min = rc.iter().min().expect("candidates");
                     let &curr_max = rc.iter().max().expect("candidates");
@@ -1029,7 +965,7 @@ impl<'a> PuzzleSearch<'a> {
     }
 }
 
-impl<'a> fmt::Debug for PuzzleSearch<'a> {
+impl fmt::Debug for PuzzleSearch<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         write!(f, "PuzzleSearch={{")?;
         for (idx, var) in self.vars.iter().enumerate() {
@@ -1055,7 +991,7 @@ impl<'a> fmt::Debug for PuzzleSearch<'a> {
     }
 }
 
-impl<'a> ops::Index<VarToken> for PuzzleSearch<'a> {
+impl ops::Index<VarToken> for PuzzleSearch<'_> {
     type Output = Val;
 
     /// Get the value assigned to a variable.

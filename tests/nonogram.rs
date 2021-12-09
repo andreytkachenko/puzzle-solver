@@ -18,6 +18,7 @@ const FLAG_OFF: Val = 1;
 const FLAG_ON: Val = 2;
 const FLAG_UNKNOWN: Val = 4;
 
+#[derive(Debug)]
 struct Nonogram {
     vars: Vec<VarToken>,
     rule: Vec<usize>,
@@ -146,7 +147,7 @@ impl Nonogram {
 }
 
 impl Constraint for Nonogram {
-    fn vars<'a>(&'a self) -> Box<dyn Iterator<Item = &'a VarToken> + 'a> {
+    fn vars(&self) -> Box<dyn Iterator<Item = &'_ VarToken> + '_> {
         Box::new(self.vars.iter())
     }
 
@@ -203,13 +204,18 @@ fn make_nonogram(rows: &[Vec<usize>], cols: &[Vec<usize>]) -> (Puzzle, Vec<Vec<V
     (sys, vars)
 }
 
-fn print_nonogram(dict: &Solution, vars: &[Vec<VarToken>]) {
-    for row in vars.iter() {
-        for &var in row.iter() {
-            print!("{}", if dict[var] == 1 { "*" } else { "." });
+fn print_nonogram(dict: &Solution, w: u32, h: u32, vars: &[Vec<VarToken>]) {
+    let mut canvas = drawille::Canvas::new(w, h);
+
+    for (y, row) in vars.iter().enumerate() {
+        for (x, &var) in row.iter().enumerate() {
+            if dict[var] == 1 {
+                canvas.set(x as _, y as _);
+            }
         }
-        println!();
     }
+
+    println!("{}", canvas.frame());
 }
 
 fn verify_nonogram(dict: &Solution, vars: &[Vec<VarToken>], expected: &Board) {
@@ -293,7 +299,7 @@ fn nonogram_wikipedia() {
 
     let (mut sys, vars) = make_nonogram(&puzzle_rows, &puzzle_cols);
     let dict = sys.solve_unique().expect("solution");
-    print_nonogram(&dict, &vars);
+    print_nonogram(&dict, puzzle_cols.len() as _, puzzle_rows.len() as _, &vars);
     verify_nonogram(&dict, &vars, &expected);
     println!("nonogram_wikipedia: {} guesses.", sys.num_guesses());
 }

@@ -11,7 +11,7 @@ use std::rc::Rc;
 const X: Val = -1;
 
 /*--------------------------------------------------------------*/
-
+#[derive(Debug)]
 struct BinaryRepr {
     // value = sum_i 2^i bits[i]
     value: VarToken,
@@ -60,7 +60,7 @@ fn make_sums(size: usize) -> Vec<Val> {
         let mut v = val as usize;
 
         while v > 0 {
-            count += (v & 1);
+            count += v & 1;
             v >>= 1;
         }
 

@@ -25,3 +25,6 @@ thiserror = "1.0.30"
 
 [badges]
 travis-ci = { repository = "wangds/puzzle-solver" }
+
+[dev-dependencies]
+drawille = "0.3.0"

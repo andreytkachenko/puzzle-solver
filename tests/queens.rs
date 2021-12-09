@@ -7,12 +7,13 @@ extern crate puzzle_solver;
 use puzzle_solver::*;
 use std::rc::Rc;
 
+#[derive(Debug)]
 struct NoDiagonal {
     vars: Vec<VarToken>,
 }
 
 impl Constraint for NoDiagonal {
-    fn vars<'a>(&'a self) -> Box<dyn Iterator<Item = &'a VarToken> + 'a> {
+    fn vars(&self) -> Box<dyn Iterator<Item = &'_ VarToken> + '_> {
         Box::new(self.vars.iter())
     }
 

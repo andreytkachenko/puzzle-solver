@@ -6,6 +6,7 @@ pub mod constraint;
 mod error;
 mod linexpr;
 mod puzzle;
+mod ranges;
 
 use core::fmt;
 use num_rational::Rational32;
