@@ -16,9 +16,7 @@ pub trait Constraint: Debug {
     fn vars(&self) -> Box<dyn Iterator<Item = &'_ VarToken> + '_>;
 
     /// Applied after a variable has been assigned.
-    fn on_assigned(&self, _search: &mut PuzzleSearch, _var: VarToken, _val: Val) -> PsResult<()> {
-        Ok(())
-    }
+    fn propagate(&self, _search: &mut PuzzleSearch, _var: VarToken, _val: Val) -> PsResult<()>; 
 
     /// Applied after a variable's candidates has been modified.
     fn on_updated(&self, _search: &mut PuzzleSearch) -> PsResult<()> {

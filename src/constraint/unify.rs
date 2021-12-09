@@ -3,7 +3,7 @@
 use std::iter;
 use std::rc::Rc;
 
-use crate::{Constraint, PsResult, PuzzleSearch, VarToken};
+use crate::{Constraint, PsResult, PuzzleSearch, Val, VarToken};
 
 #[derive(Debug)]
 pub struct Unify {
@@ -37,6 +37,10 @@ impl Constraint for Unify {
         } else {
             Box::new(iter::empty())
         }
+    }
+
+    fn propagate(&self, _search: &mut PuzzleSearch, _var: VarToken, _val: Val) -> PsResult<()> {
+        Ok(())
     }
 
     fn on_updated(&self, search: &mut PuzzleSearch) -> PsResult<()> {

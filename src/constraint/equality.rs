@@ -35,7 +35,7 @@ impl Constraint for Equality {
         Box::new(self.eqn.coef.keys())
     }
 
-    fn on_assigned(&self, search: &mut PuzzleSearch, _var: VarToken, _val: Val) -> PsResult<()> {
+    fn propagate(&self, search: &mut PuzzleSearch, _var: VarToken, _val: Val) -> PsResult<()> {
         let mut sum = self.eqn.constant;
         let mut unassigned_var = None;
 

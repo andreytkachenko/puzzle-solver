@@ -23,7 +23,7 @@ impl Constraint for BinaryRepr {
         Box::new(iter::once(&self.value).chain(&self.bits))
     }
 
-    fn on_assigned(&self, search: &mut PuzzleSearch, var: VarToken, val: Val) -> PsResult<()> {
+    fn propagate(&self, search: &mut PuzzleSearch, var: VarToken, val: Val) -> PsResult<()> {
         if var == self.value {
             let mut val = val;
             for &var in self.bits.iter() {

@@ -857,7 +857,7 @@ impl<'a> PuzzleSearch<'a> {
         for cidx in 0..self.constraints.constraints.len() {
             if self.constraints.wake[idx].contains(cidx) {
                 let constraint = self.constraints.constraints[cidx].clone();
-                constraint.on_assigned(self, var, val)?;
+                constraint.propagate(self, var, val)?;
             }
         }
 

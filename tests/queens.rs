@@ -17,7 +17,7 @@ impl Constraint for NoDiagonal {
         Box::new(self.vars.iter())
     }
 
-    fn on_assigned(&self, search: &mut PuzzleSearch, var: VarToken, val: Val) -> PsResult<()> {
+    fn propagate(&self, search: &mut PuzzleSearch, var: VarToken, val: Val) -> PsResult<()> {
         let y1 = self
             .vars
             .iter()

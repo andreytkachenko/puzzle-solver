@@ -37,7 +37,7 @@ impl Constraint for AllDifferent {
         Box::new(self.vars.iter())
     }
 
-    fn on_assigned(&self, search: &mut PuzzleSearch, var: VarToken, val: Val) -> PsResult<()> {
+    fn propagate(&self, search: &mut PuzzleSearch, var: VarToken, val: Val) -> PsResult<()> {
         for &var2 in self.vars.iter().filter(|&v| *v != var) {
             search.remove_candidate(var2, val)?;
         }
