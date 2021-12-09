@@ -12,8 +12,8 @@ use std::rc::Rc;
 
 use crate::constraint;
 use crate::Error;
-use crate::{Constraint, LinExpr, PsResult, Solution, Val, VarToken};
-
+use crate::{Constraint, PsResult, Solution, Val, VarToken};
+use crate::linexpr::LinExpr;
 use crate::ranges::Ranges;
 
 /// A collection of candidates.

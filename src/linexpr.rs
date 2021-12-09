@@ -1,13 +1,57 @@
 //! Linear expressions.
 
 use num_rational::{Ratio, Rational32};
-use num_traits::{One, Zero};
+use num_traits::{One, Signed, Zero};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::convert::From;
+use std::fmt;
 use std::ops::{Add, Mul, Neg, Sub};
 
-use crate::{Coef, LinExpr, VarToken};
+use crate::{Coef, VarToken};
+
+/// A linear expression.
+///
+/// ```text
+///   constant + coef1 * var1 + coef2 * var2 + ...
+/// ```
+#[derive(Clone)]
+pub struct LinExpr {
+    pub(crate) constant: Coef,
+
+    // The non-zero coefficients in the linear expression.  If, after
+    // some manipulations, the coefficient is 0, then it must be
+    // removed from the map.
+    pub(crate) coef: HashMap<VarToken, Coef>,
+}
+
+impl fmt::Display for LinExpr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.constant)?;
+
+        for (tok, coef) in self.coef.iter() {
+            if coef.is_negative() {
+                if coef.abs() == Rational32::from_integer(1) {
+                    write!(f, " - x{}", tok.0)?;
+                } else {
+                    write!(f, " - {} * x{}", coef.abs(), tok.0)?;
+                }
+            } else if coef.abs() == Rational32::from_integer(1) {
+                write!(f, " + x{}", tok.0)?;
+            } else {
+                write!(f, " + {} * x{}", coef, tok.0)?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
+impl fmt::Debug for LinExpr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "LinExpr {{ {} }}", self)
+    }
+}
 
 macro_rules! impl_commutative_op {
     ($LHS:ident + $RHS:ident) => {

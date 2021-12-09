@@ -4,7 +4,7 @@ use num_rational::Ratio;
 use num_traits::Zero;
 use std::rc::Rc;
 
-use crate::{Constraint, Error, LinExpr, PsResult, PuzzleSearch, Val, VarToken};
+use crate::{Constraint, Error, linexpr::LinExpr, PsResult, PuzzleSearch, Val, VarToken};
 
 #[derive(Debug)]
 pub struct Equality {

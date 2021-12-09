@@ -183,6 +183,10 @@ impl Constraint for Nonogram {
     fn substitute(&self, _search: VarToken, _replace: VarToken) -> PsResult<Rc<dyn Constraint>> {
         unimplemented!();
     }
+
+    fn propagate(&self, _search: &mut PuzzleSearch, _var: VarToken, _val: Val) -> PsResult<()> {
+        Ok(())
+    }
 }
 
 /*--------------------------------------------------------------*/
