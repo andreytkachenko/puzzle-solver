@@ -11,15 +11,14 @@ use std::ops::RangeBounds;
 use std::rc::Rc;
 
 use crate::constraint;
-use crate::Error;
-use crate::{Constraint, PsResult, Solution, Val, VarToken};
 use crate::linexpr::LinExpr;
 use crate::ranges::Ranges;
+use crate::Error;
+use crate::{Constraint, PsResult, Solution, Val, VarToken};
 
 /// A collection of candidates.
 #[derive(Clone, Debug, Eq, PartialEq)]
 enum Candidates {
-    None,                   // A variable with no candidates.
     Value(Val),             // A variable set to its initial value.
     Set(Rc<BTreeSet<Val>>), // A variable with a list of candidates.
     Range(Ranges),          // A variable with candidate ranges.
@@ -76,7 +75,6 @@ impl Candidates {
     /// Count the number of candidates for a variable.
     fn len(&self) -> usize {
         match self {
-            Candidates::None => 0,
             Candidates::Value(_) => 1,
             Candidates::Set(ref rc) => rc.len(),
             Candidates::Range(rc) => rc.len(),
@@ -86,7 +84,6 @@ impl Candidates {
     /// Get an iterator over all of the candidates of a variable.
     fn iter(&self) -> Box<dyn Iterator<Item = Val> + '_> {
         match self {
-            Candidates::None => Box::new(iter::empty()),
             Candidates::Value(val) => Box::new(iter::once(*val)),
             Candidates::Set(ref rc) => Box::new(rc.iter().cloned()),
             Candidates::Range(range) => Box::new(range.iter()),
@@ -113,19 +110,10 @@ impl Puzzle {
         }
     }
 
-    /// Allocate a new puzzle variable, without inserting any
-    /// candidates.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let mut puzzle = puzzle_solver::Puzzle::new();
-    /// puzzle.new_var();
-    /// ```
-    pub fn new_var(&mut self) -> VarToken {
+    fn new_var(&mut self, candidates: Candidates) -> VarToken {
         let var = VarToken(self.num_vars);
         self.num_vars += 1;
-        self.candidates.push(Candidates::None);
+        self.candidates.push(candidates);
         var
     }
 
@@ -139,9 +127,9 @@ impl Puzzle {
     /// send_more_money.new_var_with_candidates(&[0,1,2,3,4,5,6,7,8,9]);
     /// ```
     pub fn new_var_with_candidates(&mut self, candidates: &[Val]) -> VarToken {
-        let var = self.new_var();
-        self.insert_candidates(var, candidates);
-        var
+        self.new_var(Candidates::Set(Rc::new(BTreeSet::from_iter(
+            candidates.iter().copied(),
+        ))))
     }
 
     /// Allocate a new puzzle variable, initialising it with potential
@@ -154,9 +142,10 @@ impl Puzzle {
     /// send_more_money.new_var_with_candidates(&[0,1,2,3,4,5,6,7,8,9]);
     /// ```
     pub fn new_var_with_range<R: RangeBounds<Val>>(&mut self, range: R) -> VarToken {
-        let var = self.new_var();
-        self.insert_range(var, range);
-        var
+        self.new_var(Candidates::Range(Ranges::new(
+            range.start_bound().cloned(),
+            range.end_bound().cloned(),
+        )))
     }
 
     /// Allocate a 1d vector of puzzle variables, each initialised to
@@ -285,11 +274,6 @@ impl Puzzle {
         match self.candidates[idx] {
             Candidates::Value(_) => panic!("attempt to set fixed variable"),
             Candidates::Range(_) => panic!("attempt to insert candidates into range"),
-
-            Candidates::None => {
-                self.candidates[idx] = Candidates::Set(Rc::new(BTreeSet::new()));
-            }
-
             Candidates::Set(_) => (),
         }
 
@@ -317,7 +301,6 @@ impl Puzzle {
         let VarToken(idx) = var;
 
         match self.candidates[idx] {
-            Candidates::None => (),
             Candidates::Value(_) => panic!("attempt to set fixed variable"),
             Candidates::Range(_) => panic!("attempt to remove candidates from range"),
             Candidates::Set(ref mut rc) => {
@@ -346,7 +329,6 @@ impl Puzzle {
         let VarToken(idx) = var;
 
         match self.candidates[idx] {
-            Candidates::None => (),
             Candidates::Value(_) => panic!("attempt to set fixed variable"),
             Candidates::Range(_) => panic!("attempt to intersect candidates on the range"),
             Candidates::Set(ref mut rc) => {
@@ -366,12 +348,6 @@ impl Puzzle {
         let VarToken(idx) = var;
 
         match self.candidates[idx] {
-            ref mut x @ Candidates::None => {
-                *x = Candidates::Range(Ranges::new(
-                    range.start_bound().cloned(),
-                    range.end_bound().cloned(),
-                ));
-            }
             Candidates::Value(_) => panic!("attempt to set fixed variable"),
             Candidates::Range(ref mut r) => {
                 r.insert(range.start_bound().cloned(), range.end_bound().cloned());
@@ -653,7 +629,6 @@ impl<'a> PuzzleSearch<'a> {
         match &self.vars[idx] {
             VarState::Assigned(val) => Ok((*val, *val)),
             VarState::Unassigned(ref cs) => match cs {
-                Candidates::None => Err(Error::Default),
                 Candidates::Value(val) => Ok((*val, *val)),
                 Candidates::Range(r) => r.get_bounds().ok_or(Error::Default),
                 Candidates::Set(ref rc) => rc
@@ -676,7 +651,6 @@ impl<'a> PuzzleSearch<'a> {
         match self.vars[idx] {
             VarState::Assigned(v) => bool_to_result(v == val),
             VarState::Unassigned(ref mut cs) => match cs {
-                Candidates::None => Err(Error::Default),
                 Candidates::Value(v) => bool_to_result(*v == val),
                 Candidates::Range(ref mut r) => {
                     if r.contains(val) {
@@ -711,7 +685,6 @@ impl<'a> PuzzleSearch<'a> {
         match self.vars[idx] {
             VarState::Assigned(v) => bool_to_result(v != val),
             VarState::Unassigned(ref mut cs) => match cs {
-                Candidates::None => Err(Error::Default),
                 Candidates::Value(v) => bool_to_result(*v != val),
                 Candidates::Range(r) => {
                     if r.contains(val) {
@@ -753,7 +726,6 @@ impl<'a> PuzzleSearch<'a> {
             }
 
             VarState::Unassigned(ref mut cs) => match cs {
-                Candidates::None => Err(Error::Default),
                 Candidates::Value(v) => {
                     if min <= *v && *v <= max {
                         Ok((*v, *v))
