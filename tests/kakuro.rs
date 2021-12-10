@@ -40,7 +40,7 @@ fn make_kakuro(board: &[Rule]) -> (Puzzle, KakuroVars) {
         for y in y1..(y2 + 1) {
             for x in x1..(x2 + 1) {
                 let var = vars[y][x].unwrap_or_else(|| {
-                    let var = sys.new_var_with_candidates(&[1, 2, 3, 4, 5, 6, 7, 8, 9]);
+                    let var = sys.new_var(&[1, 2, 3, 4, 5, 6, 7, 8, 9]);
                     vars[y][x] = Some(var);
                     var
                 });

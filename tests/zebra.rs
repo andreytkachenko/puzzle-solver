@@ -64,11 +64,11 @@ fn zebra() {
 
     // #1: There are five houses.
     let mut sys = Puzzle::new();
-    let nat_var = sys.new_vars_with_candidates_1d(5, &[1, 2, 3, 4, 5]);
-    let col_var = sys.new_vars_with_candidates_1d(5, &[1, 2, 3, 4, 5]);
-    let dri_var = sys.new_vars_with_candidates_1d(5, &[1, 2, 3, 4, 5]);
-    let smo_var = sys.new_vars_with_candidates_1d(5, &[1, 2, 3, 4, 5]);
-    let pet_var = sys.new_vars_with_candidates_1d(5, &[1, 2, 3, 4, 5]);
+    let nat_var = sys.new_vars(5, &[1, 2, 3, 4, 5]);
+    let col_var = sys.new_vars(5, &[1, 2, 3, 4, 5]);
+    let dri_var = sys.new_vars(5, &[1, 2, 3, 4, 5]);
+    let smo_var = sys.new_vars(5, &[1, 2, 3, 4, 5]);
+    let pet_var = sys.new_vars(5, &[1, 2, 3, 4, 5]);
 
     let nat = |n| nat_var[n as usize];
     let col = |n| col_var[n as usize];
@@ -110,11 +110,11 @@ fn zebra() {
     sys.equals(nat(Norwegian), 1);
 
     // #11: The man who smokes Blend lives in the house next to the house with cats.
-    let neighbour11 = sys.new_var_with_candidates(&[-1, 1]);
+    let neighbour11 = sys.new_var(&[-1, 1]);
     sys.equals(smo(Blend), pet(Cat) + neighbour11);
 
     // #12: In a house next to the house where they have a horse, they smoke Dunhill.
-    let neighbour12 = sys.new_var_with_candidates(&[-1, 1]);
+    let neighbour12 = sys.new_var(&[-1, 1]);
     sys.equals(pet(Horse), smo(Dunhill) + neighbour12);
 
     // #13: The man who smokes Blue Master drinks beer.
@@ -124,11 +124,11 @@ fn zebra() {
     sys.equals(nat(German), smo(Prince));
 
     // #15: The Norwegian lives next to the blue house.
-    let neighbour15 = sys.new_var_with_candidates(&[-1, 1]);
+    let neighbour15 = sys.new_var(&[-1, 1]);
     sys.equals(nat(Norwegian), col(Blue) + neighbour15);
 
     // #16: They drink water in a house next to the house where they smoke Blend.
-    let neighbour16 = sys.new_var_with_candidates(&[-1, 1]);
+    let neighbour16 = sys.new_var(&[-1, 1]);
     sys.equals(dri(Water), smo(Blend) + neighbour16);
 
     let dict = sys.solve_any().expect("solution");

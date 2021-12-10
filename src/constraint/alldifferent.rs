@@ -17,7 +17,7 @@ impl AllDifferent {
     ///
     /// ```
     /// let mut send_more_money = puzzle_solver::Puzzle::new();
-    /// let vars = send_more_money.new_vars_with_candidates_1d(8,
+    /// let vars = send_more_money.new_vars(8,
     ///         &[0,1,2,3,4,5,6,7,8,9]);
     ///
     /// puzzle_solver::constraint::AllDifferent::new(&vars);
@@ -103,9 +103,9 @@ mod tests {
     #[test]
     fn test_contradiction() {
         let mut puzzle = Puzzle::new();
-        let v0 = puzzle.new_var_with_candidates(&[1]);
-        let v1 = puzzle.new_var_with_candidates(&[1]);
-        let v2 = puzzle.new_var_with_candidates(&[1, 2, 3]);
+        let v0 = puzzle.new_var(&[1]);
+        let v1 = puzzle.new_var(&[1]);
+        let v2 = puzzle.new_var(&[1, 2, 3]);
 
         puzzle.all_different(&[v0, v1, v2]);
 
@@ -116,9 +116,9 @@ mod tests {
     #[test]
     fn test_elimination() {
         let mut puzzle = Puzzle::new();
-        let v0 = puzzle.new_var_with_candidates(&[1]);
-        let v1 = puzzle.new_var_with_candidates(&[1, 2, 3]);
-        let v2 = puzzle.new_var_with_candidates(&[1, 2, 3]);
+        let v0 = puzzle.new_var(&[1]);
+        let v1 = puzzle.new_var(&[1, 2, 3]);
+        let v2 = puzzle.new_var(&[1, 2, 3]);
 
         puzzle.all_different(&[v0, v1, v2]);
 
@@ -131,9 +131,9 @@ mod tests {
     #[test]
     fn test_contradiction_by_length() {
         let mut puzzle = Puzzle::new();
-        let v0 = puzzle.new_var_with_candidates(&[1, 2]);
-        let v1 = puzzle.new_var_with_candidates(&[1, 2]);
-        let v2 = puzzle.new_var_with_candidates(&[1, 2]);
+        let v0 = puzzle.new_var(&[1, 2]);
+        let v1 = puzzle.new_var(&[1, 2]);
+        let v2 = puzzle.new_var(&[1, 2]);
 
         puzzle.all_different(&[v0, v1, v2]);
 
@@ -144,9 +144,9 @@ mod tests {
     #[test]
     fn test_constrain_by_value() {
         let mut puzzle = Puzzle::new();
-        let v0 = puzzle.new_var_with_candidates(&[1, 2]);
-        let v1 = puzzle.new_var_with_candidates(&[1, 2]);
-        let v2 = puzzle.new_var_with_candidates(&[1, 2, 3]);
+        let v0 = puzzle.new_var(&[1, 2]);
+        let v1 = puzzle.new_var(&[1, 2]);
+        let v2 = puzzle.new_var(&[1, 2, 3]);
 
         puzzle.all_different(&[v0, v1, v2]);
 

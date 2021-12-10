@@ -194,7 +194,7 @@ impl Constraint for Nonogram {
 fn make_nonogram(rows: &[Vec<usize>], cols: &[Vec<usize>]) -> (Puzzle, Vec<Vec<VarToken>>) {
     let mut sys = Puzzle::new();
     let (w, h) = (cols.len(), rows.len());
-    let vars = sys.new_vars_with_candidates_2d(w, h, &[0, 1]);
+    let vars = sys.new_vars_2d(w, h, &[0, 1]);
 
     for y in 0..h {
         sys.add_constraint(Nonogram::new(&vars[y], &rows[y]));

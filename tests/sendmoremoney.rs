@@ -8,7 +8,8 @@ use puzzle_solver::{Puzzle, Solution, VarToken};
 
 fn make_send_more_money() -> (Puzzle, Vec<VarToken>) {
     let mut sys = Puzzle::new();
-    let vars = sys.new_vars_with_candidates_1d(8, &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    let vars = sys.new_vars(8, &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
     let (s, e, n, d) = (vars[0], vars[1], vars[2], vars[3]);
     let (m, o, r, y) = (vars[4], vars[5], vars[6], vars[7]);
 
@@ -20,6 +21,7 @@ fn make_send_more_money() -> (Puzzle, Vec<VarToken>) {
     let send = 1000 * s + 100 * e + 10 * n + d;
     let more = 1000 * m + 100 * o + 10 * r + e;
     let money = 10000 * m + 1000 * o + 100 * n + 10 * e + y;
+    
     sys.equals(send + more, money);
 
     (sys, vars)
@@ -59,9 +61,11 @@ fn sendmoremoney_carry() {
     let (mut sys, vars) = make_send_more_money();
     let (s, e, n, d) = (vars[0], vars[1], vars[2], vars[3]);
     let (m, o, r, y) = (vars[4], vars[5], vars[6], vars[7]);
-    let c1 = sys.new_var_with_candidates(&carry);
-    let c2 = sys.new_var_with_candidates(&carry);
-    let c3 = sys.new_var_with_candidates(&carry);
+    
+    let c1 = sys.new_var(&carry);
+    let c2 = sys.new_var(&carry);
+    let c3 = sys.new_var(&carry);
+    
     sys.intersect_candidates(m, &carry); // c4 == m.
 
     sys.equals(d + e, 10 * c1 + y);

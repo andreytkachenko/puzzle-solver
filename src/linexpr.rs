@@ -279,8 +279,8 @@ mod tests {
     #[allow(clippy::identity_op, clippy::eq_op)]
     fn test_ops() {
         let mut puzzle = Puzzle::new();
-        let x = puzzle.new_var_with_range(10..=10);
-        let y = puzzle.new_var_with_range(10..=10);
+        let x = puzzle.new_var(10..=10);
+        let y = puzzle.new_var(10..=10);
 
         // expr = var + const;
         let _ = x + 1;
@@ -337,8 +337,8 @@ mod tests {
     #[allow(clippy::erasing_op, clippy::eq_op)]
     fn test_coef_zero() {
         let mut puzzle = Puzzle::new();
-        let x = puzzle.new_var_with_range(10..10);
-        let y = puzzle.new_var_with_range(10..10);
+        let x = puzzle.new_var(10..10);
+        let y = puzzle.new_var(10..10);
 
         let expr = x * 0;
         assert_eq!(expr.coef.len(), 0);

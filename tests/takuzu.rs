@@ -82,9 +82,9 @@ fn make_takuzu(puzzle: &[Vec<Val>]) -> (Puzzle, Vec<Vec<VarToken>>) {
     let col_candidates = make_sums(width);
 
     let mut sys = Puzzle::new();
-    let vars = sys.new_vars_with_candidates_2d(width, height, &[0, 1]);
-    let row_values = sys.new_vars_with_candidates_1d(height, &row_candidates);
-    let col_values = sys.new_vars_with_candidates_1d(width, &col_candidates);
+    let vars = sys.new_vars_2d(width, height, &[0, 1]);
+    let row_values = sys.new_vars(height, row_candidates);
+    let col_values = sys.new_vars(width, col_candidates);
 
     for y in 0..height {
         let total = (height as Val) / 2;
@@ -113,14 +113,14 @@ fn make_takuzu(puzzle: &[Vec<Val>]) -> (Puzzle, Vec<Vec<VarToken>>) {
     // No three in a row, i.e. not: 000, 111.
     for y in 0..height {
         for window in vars[y].windows(3) {
-            let disjunction = sys.new_var_with_candidates(&[1, 2]);
+            let disjunction = sys.new_var(&[1, 2]);
             sys.equals(window[0] + window[1] + window[2], disjunction);
         }
     }
 
     for x in 0..width {
         for y in 0..(height - 2) {
-            let disjunction = sys.new_var_with_candidates(&[1, 2]);
+            let disjunction = sys.new_var(&[1, 2]);
             sys.equals(
                 vars[y + 0][x] + vars[y + 1][x] + vars[y + 2][x],
                 disjunction,

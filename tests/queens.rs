@@ -43,7 +43,7 @@ impl Constraint for NoDiagonal {
 fn make_queens(n: usize) -> (Puzzle, Vec<VarToken>) {
     let mut sys = Puzzle::new();
     let pos: Vec<Val> = (0..n as Val).collect();
-    let vars = sys.new_vars_with_candidates_1d(n, &pos);
+    let vars = sys.new_vars(n, pos);
 
     sys.all_different(&vars);
     sys.add_constraint(NoDiagonal { vars: vars.clone() });

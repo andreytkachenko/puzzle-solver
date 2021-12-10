@@ -18,8 +18,8 @@ impl Unify {
     ///
     /// ```
     /// let mut send_more_money = puzzle_solver::Puzzle::new();
-    /// let carry = send_more_money.new_vars_with_candidates_1d(4, &[0,1]);
-    /// let vars = send_more_money.new_vars_with_candidates_1d(8,
+    /// let carry = send_more_money.new_vars(4, &[0,1]);
+    /// let vars = send_more_money.new_vars(8,
     ///         &[0,1,2,3,4,5,6,7,8,9]);
     ///
     /// let m = vars[4];
@@ -65,8 +65,8 @@ mod tests {
     #[test]
     fn test_unify_alldifferent() {
         let mut puzzle = Puzzle::new();
-        let v0 = puzzle.new_var_with_candidates(&[1, 2]);
-        let v1 = puzzle.new_var_with_candidates(&[1, 2]);
+        let v0 = puzzle.new_var(&[1, 2]);
+        let v1 = puzzle.new_var(&[1, 2]);
 
         puzzle.all_different(&[v0, v1]);
         puzzle.unify(v0, v1);
@@ -78,9 +78,9 @@ mod tests {
     #[test]
     fn test_unify_equality() {
         let mut puzzle = Puzzle::new();
-        let v0 = puzzle.new_var_with_candidates(&[1, 2, 3, 4]);
-        let v1 = puzzle.new_var_with_candidates(&[1, 2, 3, 4]);
-        let v2 = puzzle.new_var_with_candidates(&[1, 2, 3, 4]);
+        let v0 = puzzle.new_var(&[1, 2, 3, 4]);
+        let v1 = puzzle.new_var(&[1, 2, 3, 4]);
+        let v2 = puzzle.new_var(&[1, 2, 3, 4]);
 
         puzzle.equals(v0 + 2 * v1 + v2, 6);
         puzzle.unify(v0, v1);
@@ -94,9 +94,9 @@ mod tests {
     #[test]
     fn test_unify_unify() {
         let mut puzzle = Puzzle::new();
-        let v0 = puzzle.new_var_with_candidates(&[1]);
-        let v1 = puzzle.new_var_with_candidates(&[1, 2, 3, 4]);
-        let v2 = puzzle.new_var_with_candidates(&[1, 2, 3, 4]);
+        let v0 = puzzle.new_var(&[1]);
+        let v1 = puzzle.new_var(&[1, 2, 3, 4]);
+        let v2 = puzzle.new_var(&[1, 2, 3, 4]);
 
         puzzle.unify(v0, v1);
         puzzle.unify(v1, v2);

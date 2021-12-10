@@ -9,7 +9,7 @@ extern crate puzzle_solver;
 
 use num_rational::Ratio;
 use num_traits::ToPrimitive;
-use puzzle_solver::{LinExpr, Puzzle, Val};
+use puzzle_solver::{LinExpr, Puzzle};
 
 #[test]
 fn xkcd_knapsack() {
@@ -28,7 +28,7 @@ fn xkcd_knapsack() {
 
     for &(cost, _) in menu.iter() {
         let num = (total / cost).floor().to_integer();
-        let var = sys.new_var_with_candidates(&(0..(num + 1)).collect::<Vec<Val>>());
+        let var = sys.new_var(0..=num);
         vars.push(var)
     }
 

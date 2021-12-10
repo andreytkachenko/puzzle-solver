@@ -12,7 +12,7 @@ type Board = [[Val; SIZE]; SIZE];
 
 fn make_sujiko(board: &Board, tl: Val, tr: Val, bl: Val, br: Val) -> (Puzzle, Vec<Vec<VarToken>>) {
     let mut sys = Puzzle::new();
-    let vars = sys.new_vars_with_candidates_2d(3, 3, &[1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    let vars = sys.new_vars_2d(3, 3, &[1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
     sys.all_different(vars.iter().flatten());
 

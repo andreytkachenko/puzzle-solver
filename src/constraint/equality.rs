@@ -19,7 +19,7 @@ impl Equality {
     ///
     /// ```
     /// let mut magic_square = puzzle_solver::Puzzle::new();
-    /// let vars = magic_square.new_vars_with_candidates_2d(3, 3,
+    /// let vars = magic_square.new_vars_2d(3, 3,
     ///         &[1,2,3,4,5,6,7,8,9]);
     ///
     /// puzzle_solver::constraint::Equality::new(
@@ -157,8 +157,8 @@ mod tests {
     #[test]
     fn test_contradiction() {
         let mut puzzle = Puzzle::new();
-        let v0 = puzzle.new_var_with_candidates(&[3]);
-        let v1 = puzzle.new_var_with_candidates(&[0, 1]);
+        let v0 = puzzle.new_var(&[3]);
+        let v1 = puzzle.new_var(&[0, 1]);
 
         puzzle.equals(v0 + 2 * v1, 4);
 
@@ -169,8 +169,8 @@ mod tests {
     #[test]
     fn test_assign() {
         let mut puzzle = Puzzle::new();
-        let v0 = puzzle.new_var_with_candidates(&[1]);
-        let v1 = puzzle.new_var_with_candidates(&[1, 2, 3]);
+        let v0 = puzzle.new_var(&[1]);
+        let v1 = puzzle.new_var(&[1, 2, 3]);
 
         puzzle.equals(v0 + v1, 4);
 
@@ -182,8 +182,8 @@ mod tests {
     #[test]
     fn test_reduce_range() {
         let mut puzzle = Puzzle::new();
-        let v0 = puzzle.new_var_with_candidates(&[1, 2, 3]);
-        let v1 = puzzle.new_var_with_candidates(&[3, 4, 5]);
+        let v0 = puzzle.new_var(&[1, 2, 3]);
+        let v1 = puzzle.new_var(&[3, 4, 5]);
 
         puzzle.equals(v0 + v1, 5);
 

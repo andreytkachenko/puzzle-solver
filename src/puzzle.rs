@@ -7,7 +7,9 @@ use std::fmt;
 use std::iter;
 use std::mem;
 use std::ops;
+use std::ops::Bound;
 use std::ops::RangeBounds;
+use std::ops::{Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive};
 use std::rc::Rc;
 
 use crate::constraint;
@@ -18,10 +20,82 @@ use crate::{Constraint, PsResult, Solution, Val, VarToken};
 
 /// A collection of candidates.
 #[derive(Clone, Debug, Eq, PartialEq)]
-enum Candidates {
+pub enum Candidates {
     Value(Val),             // A variable set to its initial value.
     Set(Rc<BTreeSet<Val>>), // A variable with a list of candidates.
     Range(Ranges),          // A variable with candidate ranges.
+}
+
+impl From<Val> for Candidates {
+    fn from(val: Val) -> Self {
+        Candidates::Value(val)
+    }
+}
+
+impl From<&[Val]> for Candidates {
+    fn from(set: &[Val]) -> Self {
+        Candidates::Set(Rc::new(set.iter().copied().collect()))
+    }
+}
+
+impl <const N: usize> From<&[Val; N]> for Candidates {
+    fn from(set: &[Val; N]) -> Self {
+        Candidates::Set(Rc::new(set.iter().copied().collect()))
+    }
+}
+
+impl <const N: usize> From<[Val; N]> for Candidates {
+    fn from(set: [Val; N]) -> Self {
+        Candidates::Set(Rc::new(set.into_iter().collect()))
+    }
+}
+
+impl From<Vec<Val>> for Candidates {
+    fn from(set: Vec<Val>) -> Self {
+        Candidates::Set(Rc::new(set.into_iter().collect()))
+    }
+}
+
+impl From<Range<Val>> for Candidates {
+    fn from(range: Range<Val>) -> Self {
+        Candidates::Range(range.into())
+    }
+}
+
+impl From<RangeFrom<Val>> for Candidates {
+    fn from(range: RangeFrom<Val>) -> Self {
+        Candidates::Range(range.into())
+    }
+}
+
+impl From<RangeTo<Val>> for Candidates {
+    fn from(range: RangeTo<Val>) -> Self {
+        Candidates::Range(range.into())
+    }
+}
+
+impl From<RangeInclusive<Val>> for Candidates {
+    fn from(range: RangeInclusive<Val>) -> Self {
+        Candidates::Range(range.into())
+    }
+}
+
+impl From<RangeToInclusive<Val>> for Candidates {
+    fn from(range: RangeToInclusive<Val>) -> Self {
+        Candidates::Range(range.into())
+    }
+}
+
+impl From<RangeFull> for Candidates {
+    fn from(range: RangeFull) -> Self {
+        Candidates::Range(range.into())
+    }
+}
+
+impl From<(Bound<Val>, Bound<Val>)> for Candidates {
+    fn from(range: (Bound<Val>, Bound<Val>)) -> Self {
+        Candidates::Range(range.into())
+    }
 }
 
 /// The state of a variable during the solution search.
@@ -110,44 +184,13 @@ impl Puzzle {
         }
     }
 
-    fn new_var(&mut self, candidates: Candidates) -> VarToken {
+    pub fn new_var<C: Into<Candidates>>(&mut self, candidates: C) -> VarToken {
         let var = VarToken(self.num_vars);
         self.num_vars += 1;
-        self.candidates.push(candidates);
+        self.candidates.push(candidates.into());
         var
     }
 
-    /// Allocate a new puzzle variable, initialising it with potential
-    /// candidates.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let mut send_more_money = puzzle_solver::Puzzle::new();
-    /// send_more_money.new_var_with_candidates(&[0,1,2,3,4,5,6,7,8,9]);
-    /// ```
-    pub fn new_var_with_candidates(&mut self, candidates: &[Val]) -> VarToken {
-        self.new_var(Candidates::Set(Rc::new(BTreeSet::from_iter(
-            candidates.iter().copied(),
-        ))))
-    }
-
-    /// Allocate a new puzzle variable, initialising it with potential
-    /// candidates.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let mut send_more_money = puzzle_solver::Puzzle::new();
-    /// send_more_money.new_var_with_candidates(&[0,1,2,3,4,5,6,7,8,9]);
-    /// ```
-    pub fn new_var_with_range<R: RangeBounds<Val>>(&mut self, range: R) -> VarToken {
-        self.new_var(Candidates::Range(Ranges::new(
-            range.start_bound().cloned(),
-            range.end_bound().cloned(),
-        )))
-    }
-
     /// Allocate a 1d vector of puzzle variables, each initialised to
     /// have the same set of potential candidates.
     ///
@@ -155,33 +198,12 @@ impl Puzzle {
     ///
     /// ```
     /// let mut send_more_money = puzzle_solver::Puzzle::new();
-    /// send_more_money.new_vars_with_candidates_1d(8, &[0,1,2,3,4,5,6,7,8,9]);
+    /// send_more_money.new_vars(8, &[0,1,2,3,4,5,6,7,8,9]);
     /// ```
-    pub fn new_vars_with_candidates_1d(&mut self, n: usize, candidates: &[Val]) -> Vec<VarToken> {
+    pub fn new_vars<C: Into<Candidates> + Clone>(&mut self, n: usize, candidates: C) -> Vec<VarToken> {
         let mut vars = Vec::with_capacity(n);
         for _ in 0..n {
-            vars.push(self.new_var_with_candidates(candidates));
-        }
-        vars
-    }
-
-    /// Allocate a 1d vector of puzzle variables, each initialised to
-    /// have the same set of potential candidates.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let mut send_more_money = puzzle_solver::Puzzle::new();
-    /// send_more_money.new_vars_with_candidates_1d(8, &[0,1,2,3,4,5,6,7,8,9]);
-    /// ```
-    pub fn new_vars_with_range_1d<R: RangeBounds<Val> + Clone>(
-        &mut self,
-        n: usize,
-        range: R,
-    ) -> Vec<VarToken> {
-        let mut vars = Vec::with_capacity(n);
-        for _ in 0..n {
-            vars.push(self.new_var_with_range(range.clone()));
+            vars.push(self.new_var(candidates.clone()));
         }
         vars
     }
@@ -193,39 +215,17 @@ impl Puzzle {
     ///
     /// ```
     /// let mut magic_square = puzzle_solver::Puzzle::new();
-    /// magic_square.new_vars_with_candidates_2d(3, 3, &[1,2,3,4,5,6,7,8,9]);
+    /// magic_square.new_vars_2d(3, 3, &[1,2,3,4,5,6,7,8,9]);
     /// ```
-    pub fn new_vars_with_candidates_2d(
+    pub fn new_vars_2d<C: Into<Candidates> + Clone>(
         self: &mut Puzzle,
         width: usize,
         height: usize,
-        candidates: &[Val],
+        candidates: C,
     ) -> Vec<Vec<VarToken>> {
         let mut vars = Vec::with_capacity(height);
         for _ in 0..height {
-            vars.push(self.new_vars_with_candidates_1d(width, candidates));
-        }
-        vars
-    }
-
-    /// Allocate a 2d array of puzzle variables, each initialised to
-    /// have the same set of potential candidates.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let mut magic_square = puzzle_solver::Puzzle::new();
-    /// magic_square.new_vars_with_candidates_2d(3, 3, &[1,2,3,4,5,6,7,8,9]);
-    /// ```
-    pub fn new_vars_with_range_2d<R: RangeBounds<Val> + Clone>(
-        self: &mut Puzzle,
-        width: usize,
-        height: usize,
-        range: R,
-    ) -> Vec<Vec<VarToken>> {
-        let mut vars = Vec::with_capacity(height);
-        for _ in 0..height {
-            vars.push(self.new_vars_with_range_1d(width, range.clone()));
+            vars.push(self.new_vars(width, candidates.clone()));
         }
         vars
     }
@@ -240,7 +240,7 @@ impl Puzzle {
     ///
     /// ```
     /// let mut magic_square = puzzle_solver::Puzzle::new();
-    /// let vars = magic_square.new_vars_with_candidates_2d(3, 3,
+    /// let vars = magic_square.new_vars_2d(3, 3,
     ///         &[1,2,3,4,5,6,7,8,9]);
     ///
     /// magic_square.set_value(vars[1][1], 5);
@@ -264,7 +264,7 @@ impl Puzzle {
     /// ```
     /// let mut send_more_money = puzzle_solver::Puzzle::new();
     /// for _ in 0..9 {
-    ///     let var = send_more_money.new_var();
+    ///     let var = send_more_money.new_var([]);
     ///     send_more_money.insert_candidates(var, &[0,1,2,3,4,5,6,7,8,9]);
     /// }
     /// ```
@@ -289,7 +289,7 @@ impl Puzzle {
     ///
     /// ```
     /// let mut send_more_money = puzzle_solver::Puzzle::new();
-    /// let vars = send_more_money.new_vars_with_candidates_1d(8,
+    /// let vars = send_more_money.new_vars(8,
     ///         &[0,1,2,3,4,5,6,7,8,9]);
     ///
     /// let s = vars[0];
@@ -319,7 +319,7 @@ impl Puzzle {
     ///
     /// ```
     /// let mut send_more_money = puzzle_solver::Puzzle::new();
-    /// let vars = send_more_money.new_vars_with_candidates_1d(8,
+    /// let vars = send_more_money.new_vars(8,
     ///         &[0,1,2,3,4,5,6,7,8,9]);
     ///
     /// let m = vars[4];
@@ -370,7 +370,7 @@ impl Puzzle {
     ///
     /// ```
     /// let mut send_more_money = puzzle_solver::Puzzle::new();
-    /// let vars = send_more_money.new_vars_with_candidates_1d(8,
+    /// let vars = send_more_money.new_vars(8,
     ///         &[0,1,2,3,4,5,6,7,8,9]);
     ///
     /// send_more_money.all_different(&vars);
@@ -388,7 +388,7 @@ impl Puzzle {
     ///
     /// ```
     /// let mut magic_square = puzzle_solver::Puzzle::new();
-    /// let vars = magic_square.new_vars_with_candidates_2d(3, 3,
+    /// let vars = magic_square.new_vars_2d(3, 3,
     ///         &[1,2,3,4,5,6,7,8,9]);
     ///
     /// magic_square.equals(vars[0][0] + vars[0][1] + vars[0][2], 15);
@@ -407,8 +407,8 @@ impl Puzzle {
     ///
     /// ```
     /// let mut send_more_money = puzzle_solver::Puzzle::new();
-    /// let carry = send_more_money.new_vars_with_candidates_1d(4, &[0,1]);
-    /// let vars = send_more_money.new_vars_with_candidates_1d(8,
+    /// let carry = send_more_money.new_vars(4, &[0,1]);
+    /// let vars = send_more_money.new_vars(8,
     ///         &[0,1,2,3,4,5,6,7,8,9]);
     ///
     /// let m = vars[4];
@@ -424,8 +424,8 @@ impl Puzzle {
     ///
     /// ```
     /// let mut puzzle = puzzle_solver::Puzzle::new();
-    /// puzzle.new_var_with_candidates(&[1,2]);
-    /// puzzle.new_var_with_candidates(&[3,4]);
+    /// puzzle.new_var(&[1,2]);
+    /// puzzle.new_var(&[3,4]);
     ///
     /// let solution = puzzle.solve_any();
     /// assert!(solution.is_some());
@@ -449,8 +449,8 @@ impl Puzzle {
     ///
     /// ```
     /// let mut puzzle = puzzle_solver::Puzzle::new();
-    /// puzzle.new_var_with_candidates(&[1,2]);
-    /// puzzle.new_var_with_candidates(&[3,4]);
+    /// puzzle.new_var(&[1,2]);
+    /// puzzle.new_var(&[3,4]);
     ///
     /// let solution = puzzle.solve_unique();
     /// assert!(solution.is_none());
@@ -475,8 +475,8 @@ impl Puzzle {
     ///
     /// ```
     /// let mut puzzle = puzzle_solver::Puzzle::new();
-    /// puzzle.new_var_with_candidates(&[1,2]);
-    /// puzzle.new_var_with_candidates(&[3,4]);
+    /// puzzle.new_var(&[1,2]);
+    /// puzzle.new_var(&[3,4]);
     ///
     /// let solutions = puzzle.solve_all();
     /// assert_eq!(solutions.len(), 4);

@@ -2,19 +2,17 @@
 //!
 //! https://en.wikipedia.org/wiki/Magic_square
 
-extern crate puzzle_solver;
-
 use puzzle_solver::{LinExpr, Puzzle, Solution, Val, VarToken};
 
 fn make_magic_square(n: usize) -> (Puzzle, Vec<Vec<VarToken>>, VarToken) {
     let mut sys = Puzzle::new();
-    let digits: Vec<Val> = (1..(n * n + 1) as Val).collect();
-    let vars = sys.new_vars_with_candidates_2d(n, n, &digits);
+    let digits = 1..(n * n + 1) as Val;
+    let vars = sys.new_vars_2d(n, n, digits.clone());
 
     // Calculate the range of the total (in a dumb way).
-    let min = digits.iter().take(n).sum();
-    let max = digits.iter().rev().take(n).sum();
-    let total = sys.new_var_with_candidates(&(min..max).collect::<Vec<Val>>());
+    let min = digits.clone().into_iter().take(n).sum();
+    let max = digits.clone().into_iter().rev().take(n).sum();
+    let total = sys.new_var(min..max);
 
     sys.all_different(vars.iter().flatten());
 
@@ -44,7 +42,7 @@ fn make_magic_square(n: usize) -> (Puzzle, Vec<Vec<VarToken>>, VarToken) {
     }
 
     // Sum of all digits = sum of all rows (columns) = total * n.
-    sys.equals(total * (n as Val), digits.iter().sum::<Val>());
+    sys.equals(total * (n as Val), digits.into_iter().sum::<Val>());
 
     (sys, vars, total)
 }

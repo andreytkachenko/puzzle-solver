@@ -13,7 +13,7 @@ type Point = (usize, usize);
 
 fn make_killer_sudoku(board: &[(Val, Vec<Point>)]) -> (Puzzle, Vec<Vec<VarToken>>) {
     let mut sys = Puzzle::new();
-    let vars = sys.new_vars_with_candidates_2d(SIZE, SIZE, &[1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    let vars = sys.new_vars_2d(SIZE, SIZE, &[1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
     for y in 0..SIZE {
         sys.all_different(&vars[y]);

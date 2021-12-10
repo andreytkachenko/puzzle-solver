@@ -1,7 +1,5 @@
-use std::ops::{Bound, Range, RangeBounds, RangeInclusive};
-
+use std::ops::{Bound, RangeBounds};
 use ranges::GenericRange;
-
 use crate::Val;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -96,24 +94,8 @@ impl Ranges {
     }
 }
 
-impl From<(Bound<Val>, Bound<Val>)> for Ranges {
-    fn from(range: (Bound<Val>, Bound<Val>)) -> Self {
-        Self {
-            inner: range.into(),
-        }
-    }
-}
-
-impl From<RangeInclusive<Val>> for Ranges {
-    fn from(range: RangeInclusive<Val>) -> Self {
-        Self {
-            inner: range.into(),
-        }
-    }
-}
-
-impl From<Range<Val>> for Ranges {
-    fn from(range: Range<Val>) -> Self {
+impl<T: Into<ranges::Ranges<Val>>> From<T> for Ranges {
+    fn from(range: T) -> Self {
         Self {
             inner: range.into(),
         }

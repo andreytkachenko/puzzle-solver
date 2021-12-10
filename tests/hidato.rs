@@ -25,7 +25,7 @@ fn make_hidato(board: &Board) -> (Puzzle, Vec<VarToken>) {
         }
     }
 
-    let vars = sys.new_vars_with_candidates_1d(count, &pos);
+    let vars = sys.new_vars(count, pos);
 
     for y in 0..HEIGHT {
         for x in 0..WIDTH {
@@ -51,7 +51,7 @@ fn make_hidato(board: &Board) -> (Puzzle, Vec<VarToken>) {
     ];
 
     for i in 1..vars.len() {
-        let step = sys.new_var_with_candidates(&deltas);
+        let step = sys.new_var(&deltas);
         sys.equals(vars[i], vars[i - 1] + step);
     }
 
